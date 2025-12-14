@@ -1,0 +1,1782 @@
+// Variables globales
+let currentGameType = '';
+let currentGameMode = 'computer';
+let currentPlayer = 'X';
+let gameBoard = [];
+let gameActive = true;
+let currentRound = 1;
+let totalRounds = 1;
+let playerScore = 0;
+let computerScore = 0;
+let quizScore = 0;
+let diceScore = 0;
+
+// Données de personnalisation par jeu
+let gameRules = {
+    xo: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", gridSize: 3 },
+    pfc: { regles: "", victoire: "", defaite: "", manches: 3, punition: "" },
+    quiz: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
+    dice: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
+    mots: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", mots: "", gridSize: 10 },
+    snake: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", vitesse: 5 },
+    action: { regles: "", victoire: "", defaite: "", manches: 10, punition: "", actions: "", verites: "" },
+    calcul: { regles: "", victoire: "", defaite: "", manches: 10, punition: "", niveau: "facile" },
+    pong: { regles: "", victoire: "", defaite: "", manches: 3, punition: "", vitesse: 5 }
+};
+
+// Données pour les jeux
+let snakeGame = {
+    canvas: null,
+    ctx: null,
+    snake: [],
+    direction: 'right',
+    food: {},
+    gridSize: 20,
+    score: 0,
+    gameLoop: null
+};
+
+let pongGame = {
+    canvas: null,
+    ctx: null,
+    ball: { x: 300, y: 200, dx: 5, dy: 5, radius: 10 },
+    playerPaddle: { x: 50, y: 175, width: 10, height: 50 },
+    computerPaddle: { x: 540, y: 175, width: 10, height: 50 },
+    playerScore: 0,
+    computerScore: 0,
+    gameLoop: null
+};
+
+let actionVerite = {
+    actions: [],
+    verites: [],
+    currentTour: 1,
+    currentPlayerIndex: 0,
+    players: ["Joueur 1", "Joueur 2"]
+};
+
+let calculMental = {
+    currentQuestion: {},
+    score: 0,
+    count: 0,
+    timer: null,
+    timeLeft: 10
+};
+
+let motsMelees = {
+    grid: [],
+    words: [],
+    foundWords: [],
+    selectedCells: []
+};
+
+// Initialisation au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    updateStats();
+});
+
+function initializeApp() {
+    // Navigation entre les pages
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const pageId = this.getAttribute('data-page');
+            showPage(pageId);
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Bouton "Créer un jeu"
+    document.getElementById('btn-creer').addEventListener('click', function() {
+        showPage('choix');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelector('[data-page="choix"]').classList.add('active');
+    });
+
+    // Bouton "Commencer" sur l'accueil
+    document.getElementById('btn-start').addEventListener('click', function() {
+        showPage('choix');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelector('[data-page="choix"]').classList.add('active');
+    });
+
+    // Boutons de retour
+    document.getElementById('btn-retour-choix').addEventListener('click', function() {
+        showPage('accueil');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelector('[data-page="accueil"]').classList.add('active');
+    });
+
+    document.getElementById('btn-retour-perso').addEventListener('click', function() {
+        showPage('choix');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelector('[data-page="choix"]').classList.add('active');
+    });
+
+    document.getElementById('btn-retour-jeu').addEventListener('click', function() {
+        showPage('choix');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelector('[data-page="choix"]').classList.add('active');
+    });
+
+    // Sélection du type de jeu
+    document.querySelectorAll('.game-card').forEach(card => {
+        card.addEventListener('click', function() {
+            currentGameType = this.getAttribute('data-game');
+            prefillCustomizationFields(currentGameType);
+            showPage('personnalisation');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.querySelector('[data-page="personnalisation"]').classList.add('active');
+        });
+    });
+
+    // Génération du jeu
+    document.getElementById('btn-generer').addEventListener('click', function() {
+        generateGame();
+    });
+
+    // Bouton Rejouer
+    document.getElementById('btn-rejouer').addEventListener('click', function() {
+        initializeGame(currentGameType);
+    });
+
+    // Bouton Lancer le dé
+    document.getElementById('btn-roll-dice').addEventListener('click', function() {
+        if (currentGameType === 'dice') {
+            rollDice();
+        }
+    });
+}
+
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+}
+
+// Mettre à jour les statistiques
+function updateStats() {
+    // Simuler des statistiques (dans une version réelle, cela viendrait d'une API)
+    const stats = JSON.parse(localStorage.getItem('gameforge_stats')) || {
+        gamesCreated: 0,
+        playersActive: 0,
+        gamesPlayed: 0
+    };
+    
+    document.getElementById('games-count').textContent = stats.gamesCreated + 128;
+    document.getElementById('players-count').textContent = stats.playersActive + 567;
+    document.getElementById('games-played').textContent = stats.gamesPlayed + 892;
+}
+
+// Pré-remplir les champs selon le jeu
+function prefillCustomizationFields(gameType) {
+    const defaults = {
+        'xo': {
+            regles: "Placez tour à tour vos symboles (X et O) sur la grille 3x3. Le premier à aligner 3 symboles identiques gagne.",
+            victoire: "Alignez 3 symboles identiques horizontalement, verticalement ou en diagonale",
+            defaite: "Votre adversaire aligne 3 symboles avant vous ou la grille est remplie sans gagnant",
+            manches: 1,
+            punition: "Faire 5 pompes"
+        },
+        'pfc': {
+            regles: "Choisissez entre pierre, papier ou ciseaux. La pierre bat les ciseaux, les ciseaux battent le papier, le papier bat la pierre.",
+            victoire: "Gagner le plus de manches sur le nombre total défini",
+            defaite: "Perdre plus de manches que votre adversaire",
+            manches: 3,
+            punition: "Chanter une chanson"
+        },
+        'quiz': {
+            regles: "Répondez correctement aux questions qui s'affichent. Chaque bonne réponse rapporte 1 point.",
+            victoire: "Obtenir un score supérieur à la moitié du nombre total de questions",
+            defaite: "Obtenir un score inférieur ou égal à la moitié du nombre total de questions",
+            manches: 5,
+            punition: "Apprendre 3 nouveaux faits intéressants"
+        },
+        'dice': {
+            regles: "Lancez le dé autant de fois que vous le souhaitez. Le but est d'obtenir le score le plus élevé possible.",
+            victoire: "Atteindre ou dépasser le score cible de 15 points",
+            defaite: "Ne pas atteindre le score cible après 5 lancers",
+            manches: 5,
+            punition: "Sauter sur un pied 10 fois"
+        },
+        'mots': {
+            regles: "Trouvez tous les mots cachés dans la grille. Les mots peuvent être placés horizontalement, verticalement ou en diagonale.",
+            victoire: "Trouver tous les mots dans la grille",
+            defaite: "Ne pas trouver tous les mots dans le temps imparti",
+            manches: 1,
+            punition: "Écrire 10 fois chaque mot non trouvé",
+            mots: "CHAT,CHIEN,MAISON,VOITURE,ARBRE"
+        },
+        'snake': {
+            regles: "Contrôlez le serpent avec les flèches directionnelles. Mangez la nourriture pour grandir. Évitez de vous mordre la queue ou de toucher les murs.",
+            victoire: "Atteindre un score de 50 points",
+            defaite: "Le serpent se mord la queue ou touche un mur",
+            manches: 1,
+            punition: "Faire 20 sauts",
+            vitesse: 5
+        },
+        'action': {
+            regles: "Choisissez entre Action ou Vérité à chaque tour. Les Actions sont des défis à réaliser, les Vérités sont des questions auxquelles vous devez répondre honnêtement.",
+            victoire: "Terminer tous les tours sans abandonner",
+            defaite: "Abandonner un défi ou refuser de répondre",
+            manches: 10,
+            punition: "Faire le prochain défi de l'adversaire",
+            actions: "Fais 10 pompes,Chante une chanson,Danse 30 secondes",
+            verites: "Quel est ton plus grand secret?,Quelle est ta plus grande peur?"
+        },
+        'calcul': {
+            regles: "Résolvez les opérations mathématiques le plus rapidement possible. Vous avez 10 secondes par question.",
+            victoire: "Obtenir un score de 8/10 ou plus",
+            defaite: "Obtenir un score inférieur à 8/10",
+            manches: 10,
+            punition: "Résoudre 10 opérations supplémentaires",
+            niveau: "facile"
+        },
+        'pong': {
+            regles: "Utilisez les flèches haut/bas pour déplacer votre raquette. Renvoyez la balle et marquez des points quand l'adversaire rate la balle.",
+            victoire: "Gagner 3 manches avant l'ordinateur",
+            defaite: "Perdre 3 manches contre l'ordinateur",
+            manches: 3,
+            punition: "Faire 10 flexions",
+            vitesse: 5
+        }
+    };
+
+    const currentRules = gameRules[gameType];
+    const defaultValues = defaults[gameType] || {};
+    
+    document.getElementById('regles').value = currentRules.regles || defaultValues.regles || "";
+    document.getElementById('victoire').value = currentRules.victoire || defaultValues.victoire || "";
+    document.getElementById('defaite').value = currentRules.defaite || defaultValues.defaite || "";
+    document.getElementById('manches').value = currentRules.manches || defaultValues.manches || 1;
+    document.getElementById('punition').value = currentRules.punition || defaultValues.punition || "";
+    
+    // Définir le mode par défaut selon le jeu
+    const defaultModes = {
+        'xo': 'computer',
+        'pfc': 'computer', 
+        'quiz': 'computer',
+        'dice': 'computer',
+        'mots': 'computer',
+        'snake': 'computer',
+        'action': 'friends',
+        'calcul': 'computer',
+        'pong': 'computer'
+    };
+    
+    document.getElementById('game-mode').value = defaultModes[gameType] || 'computer';
+    
+    // Mettre à jour le titre
+    const gameTitles = {
+        'xo': 'Tic Tac Toe',
+        'pfc': 'Pierre-Papier-Ciseaux',
+        'quiz': 'Quiz',
+        'dice': 'Jeu de Dé',
+        'mots': 'Mots Mêlés',
+        'snake': 'Jeu du Serpent',
+        'action': 'Action ou Vérité',
+        'calcul': 'Calcul Mental',
+        'pong': 'Ping Pong'
+    };
+    
+    document.getElementById('current-game-title').textContent = `Personnalisation du jeu : ${gameTitles[gameType]}`;
+    
+    // Ajouter les champs spécifiques au jeu
+    addSpecificFields(gameType, defaultValues);
+}
+
+// Ajouter des champs spécifiques selon le jeu
+function addSpecificFields(gameType, defaultValues) {
+    const container = document.getElementById('jeu-specific-fields');
+    container.innerHTML = '';
+    
+    switch(gameType) {
+        case 'mots':
+            container.innerHTML = `
+                <div class="form-group">
+                    <label for="mots-list"><i class="fas fa-font"></i> Liste des mots (séparés par des virgules) :</label>
+                    <input type="text" id="mots-list" value="${defaultValues.mots || ''}" placeholder="CHAT,CHIEN,MAISON...">
+                </div>
+                <div class="form-group">
+                    <label for="grid-size-mots"><i class="fas fa-th"></i> Taille de la grille :</label>
+                    <select id="grid-size-mots">
+                        <option value="8">8x8</option>
+                        <option value="10" selected>10x10</option>
+                        <option value="12">12x12</option>
+                        <option value="15">15x15</option>
+                    </select>
+                </div>
+            `;
+            break;
+            
+        case 'snake':
+            container.innerHTML = `
+                <div class="form-group">
+                    <label for="snake-speed"><i class="fas fa-tachometer-alt"></i> Vitesse du serpent :</label>
+                    <select id="snake-speed">
+                        <option value="3">Lent</option>
+                        <option value="5" selected>Normal</option>
+                        <option value="8">Rapide</option>
+                        <option value="10">Très rapide</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="snake-goal"><i class="fas fa-flag-checkered"></i> Score objectif :</label>
+                    <input type="number" id="snake-goal" min="10" max="100" value="50">
+                </div>
+            `;
+            break;
+            
+        case 'action':
+            container.innerHTML = `
+                <div class="form-group">
+                    <label for="player-count"><i class="fas fa-users"></i> Nombre de joueurs :</label>
+                    <input type="number" id="player-count" min="2" max="8" value="2">
+                </div>
+                <div class="form-group">
+                    <label for="actions-list"><i class="fas fa-running"></i> Actions (séparées par des virgules) :</label>
+                    <textarea id="actions-list" rows="3" placeholder="Fais 10 pompes, Chante une chanson...">${defaultValues.actions || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="verites-list"><i class="fas fa-comment-alt"></i> Vérités (séparées par des virgules) :</label>
+                    <textarea id="verites-list" rows="3" placeholder="Quel est ton plus grand secret?, Quelle est ta plus grande peur?...">${defaultValues.verites || ''}</textarea>
+                </div>
+            `;
+            break;
+            
+        case 'calcul':
+            container.innerHTML = `
+                <div class="form-group">
+                    <label for="calcul-level"><i class="fas fa-chart-line"></i> Niveau de difficulté :</label>
+                    <select id="calcul-level">
+                        <option value="facile" selected>Facile (additions/soustractions)</option>
+                        <option value="moyen">Moyen (multiplications)</option>
+                        <option value="difficile">Difficile (divisions)</option>
+                        <option value="expert">Expert (mélange)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="calcul-time"><i class="fas fa-clock"></i> Temps par question (secondes) :</label>
+                    <input type="number" id="calcul-time" min="5" max="30" value="10">
+                </div>
+            `;
+            break;
+            
+        case 'pong':
+            container.innerHTML = `
+                <div class="form-group">
+                    <label for="pong-speed"><i class="fas fa-tachometer-alt"></i> Vitesse de la balle :</label>
+                    <select id="pong-speed">
+                        <option value="3">Lent</option>
+                        <option value="5" selected>Normal</option>
+                        <option value="8">Rapide</option>
+                        <option value="10">Très rapide</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pong-points"><i class="fas fa-bullseye"></i> Points pour gagner une manche :</label>
+                    <input type="number" id="pong-points" min="3" max="15" value="5">
+                </div>
+            `;
+            break;
+            
+        case 'xo':
+            container.innerHTML = `
+                <div class="form-group">
+                    <label for="xo-grid"><i class="fas fa-th"></i> Taille de la grille :</label>
+                    <select id="xo-grid">
+                        <option value="3">3x3 (Classique)</option>
+                        <option value="4">4x4</option>
+                        <option value="5">5x5</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="xo-length"><i class="fas fa-align-center"></i> Longueur pour gagner :</label>
+                    <input type="number" id="xo-length" min="3" max="5" value="3">
+                </div>
+            `;
+            break;
+    }
+}
+
+// Générer le jeu
+function generateGame() {
+    // Sauvegarder le mode de jeu
+    currentGameMode = document.getElementById('game-mode').value;
+    
+    // Sauvegarder les règles
+    gameRules[currentGameType] = {
+        regles: document.getElementById('regles').value,
+        victoire: document.getElementById('victoire').value,
+        defaite: document.getElementById('defaite').value,
+        manches: parseInt(document.getElementById('manches').value) || 1,
+        punition: document.getElementById('punition').value
+    };
+    
+    // Sauvegarder les champs spécifiques
+    switch(currentGameType) {
+        case 'mots':
+            gameRules.mots.mots = document.getElementById('mots-list').value;
+            gameRules.mots.gridSize = parseInt(document.getElementById('grid-size-mots').value);
+            break;
+        case 'snake':
+            gameRules.snake.vitesse = parseInt(document.getElementById('snake-speed').value);
+            gameRules.snake.scoreGoal = parseInt(document.getElementById('snake-goal').value) || 50;
+            break;
+        case 'action':
+            gameRules.action.actions = document.getElementById('actions-list').value;
+            gameRules.action.verites = document.getElementById('verites-list').value;
+            // Créer la liste des joueurs
+            const playerCount = parseInt(document.getElementById('player-count').value);
+            actionVerite.players = Array.from({length: playerCount}, (_, i) => `Joueur ${i + 1}`);
+            break;
+        case 'calcul':
+            gameRules.calcul.niveau = document.getElementById('calcul-level').value;
+            gameRules.calcul.timePerQuestion = parseInt(document.getElementById('calcul-time').value) || 10;
+            break;
+        case 'pong':
+            gameRules.pong.vitesse = parseInt(document.getElementById('pong-speed').value);
+            gameRules.pong.pointsToWin = parseInt(document.getElementById('pong-points').value) || 5;
+            break;
+        case 'xo':
+            gameRules.xo.gridSize = parseInt(document.getElementById('xo-grid').value) || 3;
+            gameRules.xo.winLength = parseInt(document.getElementById('xo-length').value) || 3;
+            break;
+    }
+    
+    // Validation
+    const rules = gameRules[currentGameType];
+    if (!rules.regles || !rules.victoire || !rules.defaite) {
+        alert("Veuillez remplir au moins les règles, conditions de victoire et de défaite.");
+        return;
+    }
+    
+    // Mettre à jour l'interface
+    const gameTitles = {
+        'xo': 'Tic Tac Toe',
+        'pfc': 'Pierre-Papier-Ciseaux',
+        'quiz': 'Quiz',
+        'dice': 'Jeu de Dé',
+        'mots': 'Mots Mêlés',
+        'snake': 'Jeu du Serpent',
+        'action': 'Action ou Vérité',
+        'calcul': 'Calcul Mental',
+        'pong': 'Ping Pong'
+    };
+    
+    document.getElementById('titre-jeu').textContent = gameTitles[currentGameType] + ' Personnalisé';
+    updateGameInterfaceWithCustomRules();
+    
+    // Afficher la page du jeu
+    showPage('jeu');
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.querySelector('[data-page="jeu"]').classList.add('active');
+    
+    // Afficher seulement le jeu sélectionné
+    document.querySelectorAll('.jeu-type').forEach(jeu => {
+        jeu.style.display = 'none';
+    });
+    document.getElementById(`jeu-${currentGameType}`).style.display = 'block';
+    
+    // Initialiser le jeu
+    initializeGame(currentGameType);
+}
+
+// Mettre à jour l'interface avec les règles
+function updateGameInterfaceWithCustomRules() {
+    const rules = gameRules[currentGameType];
+    let rulesDisplay = document.getElementById('regles-personnalisees');
+    
+    if (!rulesDisplay) {
+        rulesDisplay = document.createElement('div');
+        rulesDisplay.id = 'regles-personnalisees';
+        rulesDisplay.className = 'game-rules-display';
+        document.querySelector('.game-container').prepend(rulesDisplay);
+    }
+    
+    const modeText = currentGameMode === 'computer' ? 'Contre l\'ordinateur' : 
+                     currentGameMode === 'friends' ? 'À plusieurs' : 'Solo';
+    
+    rulesDisplay.innerHTML = `
+        <div class="custom-rules">
+            <h3>📋 Règles de votre jeu</h3>
+            <p><strong>Mode :</strong> ${modeText}</p>
+            <p><strong>Règles :</strong> ${rules.regles}</p>
+            <p><strong>Victoire :</strong> ${rules.victoire}</p>
+            <p><strong>Défaite :</strong> ${rules.defaite}</p>
+            <p><strong>Manches :</strong> ${rules.manches}</p>
+            <p><strong>Pénalité :</strong> ${rules.punition}</p>
+        </div>
+    `;
+}
+
+// Mettre à jour l'affichage du mode
+function updateModeDisplay(gameType) {
+    const modeText = currentGameMode === 'computer' ? 'Contre l\'ordinateur' : 
+                     currentGameMode === 'friends' ? 'À plusieurs' : 'Solo';
+    
+    document.getElementById('mode-info').textContent = `Mode: ${modeText}`;
+    
+    // Mettre à jour les noms d'adversaire si nécessaire
+    const adversaryName = currentGameMode === 'computer' ? 'Ordinateur' : 'Adversaire';
+    
+    if (document.getElementById('adversaire-nom')) {
+        document.getElementById('adversaire-nom').textContent = adversaryName;
+    }
+    if (document.getElementById('pfc-adversaire-nom')) {
+        document.getElementById('pfc-adversaire-nom').textContent = adversaryName;
+    }
+    if (document.getElementById('pong-adversaire-nom')) {
+        document.getElementById('pong-adversaire-nom').textContent = adversaryName;
+    }
+}
+
+// Initialiser le jeu
+function initializeGame(gameType) {
+    const rules = gameRules[gameType];
+    
+    currentRound = 1;
+    playerScore = 0;
+    computerScore = 0;
+    quizScore = 0;
+    diceScore = 0;
+    gameActive = true;
+    totalRounds = rules.manches;
+    
+    // Mettre à jour l'affichage du mode
+    updateModeDisplay(gameType);
+    
+    switch(gameType) {
+        case 'xo':
+            initializeXO();
+            break;
+        case 'pfc':
+            initializePFC();
+            break;
+        case 'quiz':
+            initializeQuiz();
+            break;
+        case 'dice':
+            initializeDice();
+            break;
+        case 'mots':
+            initializeMotsMelees();
+            break;
+        case 'snake':
+            initializeSnake();
+            break;
+        case 'action':
+            initializeActionVerite();
+            break;
+        case 'calcul':
+            initializeCalcul();
+            break;
+        case 'pong':
+            initializePong();
+            break;
+    }
+}
+
+// =============================
+// JEU TIC TAC TOE (XO)
+// =============================
+function initializeXO() {
+    const rules = gameRules.xo;
+    const gridSize = rules.gridSize || 3;
+    
+    // Créer la grille
+    createXOGrid(gridSize);
+    
+    gameBoard = Array(gridSize * gridSize).fill('');
+    currentPlayer = 'X';
+    
+    document.getElementById('joueur-actuel').textContent = currentPlayer;
+    document.getElementById('manche-actuelle').textContent = currentRound;
+    document.getElementById('manches-total').textContent = rules.manches;
+    
+    // Supprimer les anciens résultats
+    const oldResult = document.querySelector('#jeu-xo .result');
+    if (oldResult) oldResult.remove();
+}
+
+function createXOGrid(size) {
+    const gameBoard = document.getElementById('xo-board');
+    gameBoard.innerHTML = '';
+    gameBoard.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    
+    for (let i = 0; i < size * size; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.setAttribute('data-index', i);
+        cell.textContent = '';
+        cell.addEventListener('click', handleCellClick);
+        gameBoard.appendChild(cell);
+    }
+}
+
+function handleCellClick() {
+    if (!gameActive || currentGameType !== 'xo') return;
+    
+    const index = parseInt(this.getAttribute('data-index'));
+    const rules = gameRules.xo;
+    
+    if (gameBoard[index] !== '') return;
+    
+    gameBoard[index] = currentPlayer;
+    this.textContent = currentPlayer;
+    this.style.color = currentPlayer === 'X' ? '#FF6B6B' : '#4ECDC4';
+    
+    if (checkXOWinner()) {
+        endXOGame(`🎉 Le joueur ${currentPlayer} a gagné!`, rules);
+        return;
+    }
+    
+    if (checkXODraw()) {
+        endXOGame('🤝 Match nul!', rules);
+        return;
+    }
+    
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    document.getElementById('joueur-actuel').textContent = currentPlayer;
+    
+    // Tour de l'ordinateur si mode contre ordinateur
+    if (currentGameMode === 'computer' && currentPlayer === 'O') {
+        setTimeout(computerMoveXO, 500);
+    }
+}
+
+function computerMoveXO() {
+    if (!gameActive) return;
+    
+    const emptyCells = gameBoard.map((cell, index) => cell === '' ? index : -1)
+                               .filter(index => index !== -1);
+    if (emptyCells.length > 0) {
+        const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        const cell = document.querySelector(`#xo-board .cell[data-index="${randomIndex}"]`);
+        cell.click();
+    }
+}
+
+function checkXOWinner() {
+    const size = Math.sqrt(gameBoard.length);
+    const winLength = gameRules.xo.winLength || 3;
+    
+    // Vérifier les lignes
+    for (let row = 0; row < size; row++) {
+        for (let col = 0; col <= size - winLength; col++) {
+            const first = gameBoard[row * size + col];
+            if (first !== '' && 
+                Array.from({length: winLength}, (_, i) => gameBoard[row * size + col + i])
+                     .every(cell => cell === first)) {
+                return true;
+            }
+        }
+    }
+    
+    // Vérifier les colonnes
+    for (let col = 0; col < size; col++) {
+        for (let row = 0; row <= size - winLength; row++) {
+            const first = gameBoard[row * size + col];
+            if (first !== '' && 
+                Array.from({length: winLength}, (_, i) => gameBoard[(row + i) * size + col])
+                     .every(cell => cell === first)) {
+                return true;
+            }
+        }
+    }
+    
+    // Vérifier les diagonales
+    for (let row = 0; row <= size - winLength; row++) {
+        for (let col = 0; col <= size - winLength; col++) {
+            const first = gameBoard[row * size + col];
+            if (first !== '' && 
+                Array.from({length: winLength}, (_, i) => gameBoard[(row + i) * size + col + i])
+                     .every(cell => cell === first)) {
+                return true;
+            }
+        }
+    }
+    
+    // Vérifier les anti-diagonales
+    for (let row = 0; row <= size - winLength; row++) {
+        for (let col = winLength - 1; col < size; col++) {
+            const first = gameBoard[row * size + col];
+            if (first !== '' && 
+                Array.from({length: winLength}, (_, i) => gameBoard[(row + i) * size + col - i])
+                     .every(cell => cell === first)) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+function checkXODraw() {
+    return gameBoard.every(cell => cell !== '');
+}
+
+function endXOGame(message, rules) {
+    gameActive = false;
+    
+    const gameInfo = document.querySelector('#jeu-xo .game-info');
+    const resultDiv = document.createElement('div');
+    resultDiv.className = 'result';
+    
+    let punishmentText = '';
+    if (message.includes('gagné') && message.includes('O')) {
+        punishmentText = `<p class="punition">💥 Le perdant doit: ${rules.punition}</p>`;
+    }
+    
+    resultDiv.innerHTML = `
+        <h3>${message}</h3>
+        ${punishmentText}
+    `;
+    
+    gameInfo.appendChild(resultDiv);
+    
+    // Passer à la manche suivante ou terminer
+    currentRound++;
+    if (currentRound <= totalRounds) {
+        setTimeout(() => {
+            initializeXO();
+        }, 3000);
+    }
+}
+
+// =============================
+// JEU PIERRE-PAPIER-CISEAUX
+// =============================
+function initializePFC() {
+    const rules = gameRules.pfc;
+    
+    playerScore = 0;
+    computerScore = 0;
+    currentRound = 1;
+    
+    document.getElementById('score-joueur').textContent = playerScore;
+    document.getElementById('score-adversaire').textContent = computerScore;
+    document.getElementById('manche-actuelle-pfc').textContent = currentRound;
+    document.getElementById('manches-total-pfc').textContent = rules.manches;
+    document.getElementById('resultat-pfc').textContent = `🎯 ${rules.victoire}`;
+    
+    // Activer les choix
+    document.querySelectorAll('.choice').forEach(c => {
+        c.style.pointerEvents = 'auto';
+        c.addEventListener('click', handlePFCClick);
+    });
+}
+
+function handlePFCClick() {
+    if (currentGameType !== 'pfc') return;
+    
+    const rules = gameRules.pfc;
+    const playerChoice = this.getAttribute('data-choice');
+    let adversaryChoice;
+    
+    if (currentGameMode === 'computer') {
+        adversaryChoice = ['pierre', 'papier', 'ciseaux'][Math.floor(Math.random() * 3)];
+    } else {
+        // Mode 2 joueurs - pour simplifier, on utilise un choix aléatoire pour l'adversaire
+        adversaryChoice = ['pierre', 'papier', 'ciseaux'][Math.floor(Math.random() * 3)];
+    }
+    
+    let result = '';
+    
+    if (playerChoice === adversaryChoice) {
+        result = "Égalité!";
+    } else if (
+        (playerChoice === 'pierre' && adversaryChoice === 'ciseaux') ||
+        (playerChoice === 'papier' && adversaryChoice === 'pierre') ||
+        (playerChoice === 'ciseaux' && adversaryChoice === 'papier')
+    ) {
+        result = "Vous gagnez cette manche!";
+        playerScore++;
+    } else {
+        result = `${currentGameMode === 'computer' ? "L'ordinateur" : "L'adversaire"} gagne cette manche!`;
+        computerScore++;
+    }
+    
+    document.getElementById('resultat-pfc').textContent = `Vous: ${playerChoice} | ${currentGameMode === 'computer' ? 'Ordinateur' : 'Adversaire'}: ${adversaryChoice} - ${result}`;
+    document.getElementById('score-joueur').textContent = playerScore;
+    document.getElementById('score-adversaire').textContent = computerScore;
+    
+    currentRound++;
+    document.getElementById('manche-actuelle-pfc').textContent = currentRound;
+    
+    if (currentRound > rules.manches) {
+        let finalResult = "Match nul!";
+        if (playerScore > computerScore) {
+            finalResult = `🎉 Félicitations, vous avez gagné le match! ${rules.victoire}`;
+        } else if (computerScore > playerScore) {
+            finalResult = `💥 ${currentGameMode === 'computer' ? "L'ordinateur" : "L'adversaire"} a gagné! ${rules.defaite} - Punition: ${rules.punition}`;
+        }
+        
+        document.getElementById('resultat-pfc').textContent = finalResult;
+        document.querySelectorAll('.choice').forEach(c => {
+            c.style.pointerEvents = 'none';
+            c.removeEventListener('click', handlePFCClick);
+        });
+    }
+}
+
+// =============================
+// JEU QUIZ
+// =============================
+let quizQuestions = [
+    {
+        question: "Quelle est la capitale de la France?",
+        options: ["Londres", "Berlin", "Paris", "Madrid"],
+        answer: 3
+    },
+    {
+        question: "Combien de côtés a un hexagone?",
+        options: ["4", "5", "6", "7"],
+        answer: 3
+    },
+    {
+        question: "Quel est le plus grand mammifère du monde?",
+        options: ["Éléphant", "Girafe", "Baleine bleue", "Rhinocéros"],
+        answer: 3
+    },
+    {
+        question: "Qui a peint la Joconde?",
+        options: ["Van Gogh", "Picasso", "Léonard de Vinci", "Michel-Ange"],
+        answer: 3
+    },
+    {
+        question: "Quel est le symbole chimique de l'or?",
+        options: ["Ag", "Fe", "Au", "Cu"],
+        answer: 3
+    }
+];
+
+function initializeQuiz() {
+    const rules = gameRules.quiz;
+    
+    quizScore = 0;
+    document.getElementById('score-quiz').textContent = quizScore;
+    document.getElementById('questions-total').textContent = rules.manches;
+    document.getElementById('resultat-quiz').textContent = `🎯 ${rules.victoire}`;
+    
+    // Générer des questions personnalisées si besoin
+    if (quizQuestions.length < rules.manches) {
+        generateCustomQuizQuestions(rules.manches);
+    }
+    
+    // Activer les options
+    document.querySelectorAll('.quiz-option').forEach(opt => {
+        opt.style.pointerEvents = 'auto';
+        opt.addEventListener('click', handleQuizClick);
+    });
+    
+    showQuestion();
+}
+
+function generateCustomQuizQuestions(count) {
+    quizQuestions = [];
+    const questionTemplates = [
+        "Quelle est la réponse à la question #NUM ?",
+        "Lequel de ces éléments est correct pour la question #NUM ?",
+        "Pour la question #NUM, quelle est la bonne réponse ?",
+        "Sélectionnez la bonne réponse pour la question #NUM"
+    ];
+    
+    for (let i = 0; i < count; i++) {
+        quizQuestions.push({
+            question: questionTemplates[Math.floor(Math.random() * questionTemplates.length)].replace('#NUM', i + 1),
+            options: ["Option A", "Option B", "Option C", "Option D"],
+            answer: Math.floor(Math.random() * 4) + 1
+        });
+    }
+}
+
+function showQuestion() {
+    const currentIndex = quizScore;
+    
+    if (currentIndex >= quizQuestions.length) {
+        endQuizGame();
+        return;
+    }
+    
+    const question = quizQuestions[currentIndex];
+    document.getElementById('question-quiz').textContent = question.question;
+    
+    const options = document.querySelectorAll('.quiz-option');
+    options.forEach((opt, index) => {
+        opt.querySelector('.option-text').textContent = question.options[index];
+    });
+}
+
+function handleQuizClick() {
+    if (currentGameType !== 'quiz') return;
+    
+    const selectedOption = parseInt(this.getAttribute('data-option'));
+    const correctOption = quizQuestions[quizScore].answer;
+    
+    if (selectedOption === correctOption) {
+        quizScore++;
+        document.getElementById('resultat-quiz').textContent = "✅ Bonne réponse!";
+        document.getElementById('resultat-quiz').style.color = '#4CAF50';
+    } else {
+        document.getElementById('resultat-quiz').textContent = `❌ Mauvaise réponse! La bonne réponse était : ${quizQuestions[quizScore].options[correctOption - 1]}`;
+        document.getElementById('resultat-quiz').style.color = '#FF6B6B';
+    }
+    
+    document.getElementById('score-quiz').textContent = quizScore;
+    
+    setTimeout(showQuestion, 1500);
+}
+
+function endQuizGame() {
+    const rules = gameRules.quiz;
+    let finalMessage = `Quiz terminé! Votre score: ${quizScore}/${quizQuestions.length}`;
+    
+    if (quizScore >= Math.ceil(quizQuestions.length / 2)) {
+        finalMessage += ` 🎉 ${rules.victoire}`;
+    } else {
+        finalMessage += ` 💥 ${rules.defaite} - ${rules.punition}`;
+    }
+    
+    document.getElementById('resultat-quiz').textContent = finalMessage;
+    document.querySelectorAll('.quiz-option').forEach(opt => {
+        opt.style.pointerEvents = 'none';
+        opt.removeEventListener('click', handleQuizClick);
+    });
+}
+
+// =============================
+// JEU DE DÉ
+// =============================
+function initializeDice() {
+    const rules = gameRules.dice;
+    
+    diceScore = 0;
+    document.getElementById('score-dice').textContent = diceScore;
+    document.getElementById('resultat-dice').textContent = `🎯 ${rules.victoire}`;
+    
+    // Activer le lancer de dé
+    document.getElementById('btn-roll-dice').addEventListener('click', rollDice);
+}
+
+function rollDice() {
+    if (currentGameType !== 'dice') return;
+    
+    const dice = document.getElementById('de');
+    dice.classList.add('rolling');
+    
+    setTimeout(() => {
+        const roll = Math.floor(Math.random() * 6) + 1;
+        const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+        
+        dice.textContent = diceFaces[roll - 1];
+        dice.classList.remove('rolling');
+        
+        diceScore += roll;
+        document.getElementById('score-dice').textContent = diceScore;
+        document.getElementById('resultat-dice').textContent = `Vous avez obtenu un ${roll}!`;
+        
+        // Vérifier la victoire
+        const rules = gameRules.dice;
+        if (diceScore >= 15) {
+            document.getElementById('resultat-dice').textContent = 
+               `🎉 Félicitations! ${rules.victoire}`;
+            document.getElementById('btn-roll-dice').disabled = true;
+        }
+    }, 1000);
+}
+
+// =============================
+// JEU MOTS MÊLÉS
+// =============================
+function initializeMotsMelees() {
+    const rules = gameRules.mots;
+    
+    // Préparer les mots
+    const mots = rules.mots.split(',').map(mot => mot.trim().toUpperCase()).filter(mot => mot.length > 0);
+    
+    if (mots.length === 0) {
+        alert("Veuillez entrer au moins un mot dans la liste des mots.");
+        return;
+    }
+    
+    motsMelees.words = mots;
+    motsMelees.foundWords = [];
+    motsMelees.selectedCells = [];
+    
+    document.getElementById('mots-trouves').textContent = '0';
+    document.getElementById('mots-total').textContent = mots.length;
+    document.getElementById('resultat-mots').textContent = '';
+    
+    // Générer la grille
+    generateWordSearchGrid();
+    
+    // Afficher la liste des mots
+    displayWordList();
+}
+
+function generateWordSearchGrid() {
+    const gridSize = gameRules.mots.gridSize;
+    const grid = document.getElementById('mots-grid');
+    grid.innerHTML = '';
+    grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+    
+    // Créer une grille vide
+    motsMelees.grid = Array(gridSize).fill().map(() => Array(gridSize).fill(''));
+    
+    // Placer les mots dans la grille
+    placeWordsInGrid();
+    
+    // Remplir les cases vides avec des lettres aléatoires
+    fillEmptyCells();
+    
+    // Afficher la grille
+    displayGrid();
+}
+
+function placeWordsInGrid() {
+    const gridSize = gameRules.mots.gridSize;
+    
+    for (let mot of motsMelees.words) {
+        let placed = false;
+        let attempts = 0;
+        
+        while (!placed && attempts < 100) {
+            const direction = Math.floor(Math.random() * 3); // 0: horizontal, 1: vertical, 2: diagonal
+            const row = Math.floor(Math.random() * gridSize);
+            const col = Math.floor(Math.random() * gridSize);
+            
+            if (canPlaceWord(mot, row, col, direction)) {
+                placeWord(mot, row, col, direction);
+                placed = true;
+            }
+            attempts++;
+        }
+    }
+}
+
+function canPlaceWord(mot, row, col, direction) {
+    const gridSize = gameRules.mots.gridSize;
+    
+    for (let i = 0; i < mot.length; i++) {
+        let r = row, c = col;
+        
+        switch(direction) {
+            case 0: c = col + i; break; // horizontal
+            case 1: r = row + i; break; // vertical
+            case 2: r = row + i; c = col + i; break; // diagonal
+        }
+        
+        if (r >= gridSize || c >= gridSize) return false;
+        if (motsMelees.grid[r][c] !== '' && motsMelees.grid[r][c] !== mot[i]) return false;
+    }
+    
+    return true;
+}
+
+function placeWord(mot, row, col, direction) {
+    for (let i = 0; i < mot.length; i++) {
+        let r = row, c = col;
+        
+        switch(direction) {
+            case 0: c = col + i; break;
+            case 1: r = row + i; break;
+            case 2: r = row + i; c = col + i; break;
+        }
+        
+        motsMelees.grid[r][c] = mot[i];
+    }
+}
+
+function fillEmptyCells() {
+    const gridSize = gameRules.mots.gridSize;
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            if (motsMelees.grid[i][j] === '') {
+                motsMelees.grid[i][j] = alphabet[Math.floor(Math.random() * alphabet.length)];
+            }
+        }
+    }
+}
+
+function displayGrid() {
+    const grid = document.getElementById('mots-grid');
+    const gridSize = gameRules.mots.gridSize;
+    
+    for (let i = 0; i < gridSize; i++) {
+        for (let j = 0; j < gridSize; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'word-cell';
+            cell.textContent = motsMelees.grid[i][j];
+            cell.setAttribute('data-row', i);
+            cell.setAttribute('data-col', j);
+            
+            cell.addEventListener('click', () => selectWordCell(i, j));
+            
+            grid.appendChild(cell);
+        }
+    }
+}
+
+function displayWordList() {
+    const wordList = document.getElementById('word-list');
+    wordList.innerHTML = '';
+    
+    for (let mot of motsMelees.words) {
+        const wordItem = document.createElement('div');
+        wordItem.className = 'word-item';
+        wordItem.textContent = mot;
+        wordList.appendChild(wordItem);
+    }
+}
+
+function selectWordCell(row, col) {
+    if (currentGameType !== 'mots') return;
+    
+    const cell = document.querySelector(`.word-cell[data-row="${row}"][data-col="${col}"]`);
+    
+    // Pour simplifier, on vérifie si la cellule fait partie d'un mot
+    checkWordAtPosition(row, col);
+    
+    // Marquer la cellule comme sélectionnée
+    cell.classList.add('selected');
+}
+
+function checkWordAtPosition(row, col) {
+    const gridSize = gameRules.mots.gridSize;
+    
+    for (let mot of motsMelees.words) {
+        if (motsMelees.foundWords.includes(mot)) continue;
+        
+        // Vérifier dans toutes les directions
+        for (let direction = 0; direction < 3; direction++) {
+            if (isWordAtPosition(mot, row, col, direction)) {
+                motsMelees.foundWords.push(mot);
+                updateFoundWords();
+                return;
+            }
+        }
+    }
+}
+
+function isWordAtPosition(mot, row, col, direction) {
+    const gridSize = gameRules.mots.gridSize;
+    
+    for (let i = 0; i < mot.length; i++) {
+        let r = row, c = col;
+        
+        switch(direction) {
+            case 0: c = col + i; break;
+            case 1: r = row + i; break;
+            case 2: r = row + i; c = col + i; break;
+        }
+        
+        if (r >= gridSize || c >= gridSize) return false;
+        if (motsMelees.grid[r][c] !== mot[i]) return false;
+    }
+    
+    return true;
+}
+
+function updateFoundWords() {
+    document.getElementById('mots-trouves').textContent = motsMelees.foundWords.length;
+    
+    // Mettre à jour la liste des mots
+    const wordItems = document.querySelectorAll('.word-item');
+    wordItems.forEach(item => {
+        if (motsMelees.foundWords.includes(item.textContent)) {
+            item.classList.add('found');
+            item.style.textDecoration = 'line-through';
+            item.style.color = '#4CAF50';
+        }
+    });
+    
+    // Vérifier si tous les mots sont trouvés
+    if (motsMelees.foundWords.length === motsMelees.words.length) {
+        document.getElementById('resultat-mots').textContent = `🎉 ${gameRules.mots.victoire}`;
+    }
+}
+
+// =============================
+// JEU SNAKE
+// =============================
+function initializeSnake() {
+    const canvas = document.getElementById('snake-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    snakeGame.canvas = canvas;
+    snakeGame.ctx = ctx;
+    snakeGame.snake = [{x: 10, y: 10}];
+    snakeGame.direction = 'right';
+    snakeGame.score = 0;
+    
+    // Générer la première nourriture
+    generateSnakeFood();
+    
+    document.getElementById('snake-score').textContent = snakeGame.score;
+    document.getElementById('snake-length').textContent = snakeGame.snake.length;
+    document.getElementById('resultat-snake').textContent = '';
+    
+    // Démarrer le jeu
+    if (snakeGame.gameLoop) clearInterval(snakeGame.gameLoop);
+    
+    const speed = 1000 / (gameRules.snake.vitesse * 10);
+    snakeGame.gameLoop = setInterval(updateSnake, speed);
+    
+    // Contrôles tactiles
+    document.getElementById('up').addEventListener('click', () => changeSnakeDirection('up'));
+    document.getElementById('down').addEventListener('click', () => changeSnakeDirection('down'));
+    document.getElementById('left').addEventListener('click', () => changeSnakeDirection('left'));
+    document.getElementById('right').addEventListener('click', () => changeSnakeDirection('right'));
+    
+    // Contrôles clavier
+    document.addEventListener('keydown', handleSnakeKeyPress);
+}
+
+function handleSnakeKeyPress(e) {
+    if (currentGameType !== 'snake') return;
+    
+    switch(e.key) {
+        case 'ArrowUp': changeSnakeDirection('up'); break;
+        case 'ArrowDown': changeSnakeDirection('down'); break;
+        case 'ArrowLeft': changeSnakeDirection('left'); break;
+        case 'ArrowRight': changeSnakeDirection('right'); break;
+    }
+}
+
+function changeSnakeDirection(newDirection) {
+    const opposites = {up: 'down', down: 'up', left: 'right', right: 'left'};
+    if (newDirection !== opposites[snakeGame.direction]) {
+        snakeGame.direction = newDirection;
+    }
+}
+
+function generateSnakeFood() {
+    const x = Math.floor(Math.random() * (snakeGame.canvas.width / snakeGame.gridSize));
+    const y = Math.floor(Math.random() * (snakeGame.canvas.height / snakeGame.gridSize));
+    snakeGame.food = {x, y};
+}
+
+function updateSnake() {
+    const head = {...snakeGame.snake[0]};
+    
+    // Déplacer la tête
+    switch(snakeGame.direction) {
+        case 'up': head.y--; break;
+        case 'down': head.y++; break;
+        case 'left': head.x--; break;
+        case 'right': head.x++; break;
+    }
+    
+    // Vérifier les collisions avec les murs
+    if (head.x < 0 || head.x >= snakeGame.canvas.width / snakeGame.gridSize ||
+        head.y < 0 || head.y >= snakeGame.canvas.height / snakeGame.gridSize) {
+        endSnakeGame();
+        return;
+    }
+    
+    // Vérifier les collisions avec soi-même
+    for (let segment of snakeGame.snake) {
+        if (head.x === segment.x && head.y === segment.y) {
+            endSnakeGame();
+            return;
+        }
+    }
+    
+    snakeGame.snake.unshift(head);
+    
+    // Vérifier si la nourriture est mangée
+    if (head.x === snakeGame.food.x && head.y === snakeGame.food.y) {
+        snakeGame.score += 10;
+        document.getElementById('snake-score').textContent = snakeGame.score;
+        document.getElementById('snake-length').textContent = snakeGame.snake.length;
+        generateSnakeFood();
+        
+        // Vérifier la victoire
+        if (snakeGame.score >= (gameRules.snake.scoreGoal || 50)) {
+            document.getElementById('resultat-snake').textContent = `🎉 ${gameRules.snake.victoire}`;
+            clearInterval(snakeGame.gameLoop);
+            document.removeEventListener('keydown', handleSnakeKeyPress);
+            return;
+        }
+    } else {
+        snakeGame.snake.pop();
+    }
+    
+    drawSnake();
+}
+
+function drawSnake() {
+    const ctx = snakeGame.ctx;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, 0, snakeGame.canvas.width, snakeGame.canvas.height);
+    
+    // Dessiner le serpent
+    ctx.fillStyle = '#4ecdc4';
+    for (let segment of snakeGame.snake) {
+        ctx.fillRect(
+            segment.x * snakeGame.gridSize,
+            segment.y * snakeGame.gridSize,
+            snakeGame.gridSize - 2,
+            snakeGame.gridSize - 2
+        );
+    }
+    
+    // Dessiner la nourriture
+    ctx.fillStyle = '#ff6b6b';
+    ctx.fillRect(
+        snakeGame.food.x * snakeGame.gridSize,
+        snakeGame.food.y * snakeGame.gridSize,
+        snakeGame.gridSize - 2,
+        snakeGame.gridSize - 2
+    );
+}
+
+function endSnakeGame() {
+    clearInterval(snakeGame.gameLoop);
+    document.getElementById('resultat-snake').textContent = `💥 ${gameRules.snake.defaite} - ${gameRules.snake.punition}`;
+    document.removeEventListener('keydown', handleSnakeKeyPress);
+}
+
+// =============================
+// JEU ACTION OU VÉRITÉ
+// =============================
+function initializeActionVerite() {
+    const rules = gameRules.action;
+    
+    // Préparer les actions et vérités
+    actionVerite.actions = rules.actions.split(',').map(a => a.trim()).filter(a => a.length > 0);
+    actionVerite.verites = rules.verites.split(',').map(v => v.trim()).filter(v => v.length > 0);
+    
+    // Si pas assez d'actions/vérités, utiliser les valeurs par défaut
+    if (actionVerite.actions.length === 0) {
+        actionVerite.actions = [
+            "Fais 10 pompes",
+            "Chante une chanson",
+            "Danse pendant 30 secondes",
+            "Fais une imitation",
+            "Raconte une blague",
+            "Fais 20 sauts sur place",
+            "Fais le tour de la pièce en marchant comme un crabe",
+            "Mime ton animal préféré",
+            "Fais 10 flexions",
+            "Récite l'alphabet à l'envers"
+        ];
+    }
+    
+    if (actionVerite.verites.length === 0) {
+        actionVerite.verites = [
+            "Quel est ton plus grand secret?",
+            "Quelle est ta plus grande peur?",
+            "Quel est ton plus grand regret?",
+            "Qui est ta célébrité préférée?",
+            "Quel est ton rêve le plus fou?",
+            "Quelle est la chose la plus embarrassante qui te soit arrivée?",
+            "Quel est ton plus mauvais défaut?",
+            "Quel est ton plus beau souvenir?",
+            "Quelle est ta plus grande fierté?",
+            "Quel est ton endroit préféré au monde?"
+        ];
+    }
+    
+    actionVerite.currentTour = 1;
+    actionVerite.currentPlayerIndex = 0;
+    
+    document.getElementById('current-player').textContent = actionVerite.players[0];
+    document.getElementById('tour-action').textContent = actionVerite.currentTour;
+    document.getElementById('tours-total').textContent = rules.manches;
+    document.getElementById('resultat-action').textContent = '';
+    document.getElementById('card-content').textContent = 'Cliquez sur un bouton pour commencer!';
+    
+    // Activer les boutons
+    document.getElementById('btn-action').addEventListener('click', showRandomAction);
+    document.getElementById('btn-verite').addEventListener('click', showRandomVerite);
+    document.getElementById('btn-next-player').addEventListener('click', nextPlayer);
+}
+
+function showRandomAction() {
+    const randomIndex = Math.floor(Math.random() * actionVerite.actions.length);
+    const randomAction = actionVerite.actions[randomIndex];
+    document.getElementById('card-content').innerHTML = `<h3>🎭 ACTION</h3><p>${randomAction}</p>`;
+}
+
+function showRandomVerite() {
+    const randomIndex = Math.floor(Math.random() * actionVerite.verites.length);
+    const randomVerite = actionVerite.verites[randomIndex];
+    document.getElementById('card-content').innerHTML = `<h3>📖 VÉRITÉ</h3><p>${randomVerite}</p>`;
+}
+
+function nextPlayer() {
+    actionVerite.currentPlayerIndex = (actionVerite.currentPlayerIndex + 1) % actionVerite.players.length;
+    document.getElementById('current-player').textContent = actionVerite.players[actionVerite.currentPlayerIndex];
+    
+    // Si on revient au premier joueur, on passe au tour suivant
+    if (actionVerite.currentPlayerIndex === 0) {
+        actionVerite.currentTour++;
+        document.getElementById('tour-action').textContent = actionVerite.currentTour;
+        
+        // Vérifier la fin du jeu
+        if (actionVerite.currentTour > gameRules.action.manches) {
+            document.getElementById('resultat-action').textContent = `🎉 ${gameRules.action.victoire}`;
+            document.getElementById('btn-action').disabled = true;
+            document.getElementById('btn-verite').disabled = true;
+            document.getElementById('btn-next-player').disabled = true;
+        }
+    }
+    
+    // Réinitialiser la carte
+    document.getElementById('card-content').innerHTML = '<p>Choisissez Action ou Vérité</p>';
+}
+
+// =============================
+// JEU CALCUL MENTAL
+// =============================
+function initializeCalcul() {
+    const rules = gameRules.calcul;
+    
+    calculMental.score = 0;
+    calculMental.count = 0;
+    calculMental.timeLeft = rules.timePerQuestion || 10;
+    
+    document.getElementById('calcul-score').textContent = calculMental.score;
+    document.getElementById('calcul-count').textContent = calculMental.count;
+    document.getElementById('calcul-total').textContent = rules.manches;
+    document.getElementById('resultat-calcul').textContent = '';
+    document.getElementById('timer-progress').style.width = '100%';
+    document.getElementById('calcul-timer').textContent = calculMental.timeLeft;
+    document.getElementById('calcul-reponse').disabled = false;
+    document.getElementById('btn-valider-calcul').disabled = false;
+    
+    generateCalculQuestion();
+    startCalculTimer();
+    
+    // Activer le bouton valider
+    document.getElementById('btn-valider-calcul').addEventListener('click', validateCalculAnswer);
+    document.getElementById('calcul-reponse').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            validateCalculAnswer();
+        }
+    });
+}
+
+function generateCalculQuestion() {
+    const rules = gameRules.calcul;
+    let a, b, operation, result;
+    
+    switch(rules.niveau) {
+        case 'facile':
+            a = Math.floor(Math.random() * 10) + 1;
+            b = Math.floor(Math.random() * 10) + 1;
+            operation = Math.random() > 0.5 ? '+' : '-';
+            result = operation === '+' ? a + b : a - b;
+            break;
+        case 'moyen':
+            a = Math.floor(Math.random() * 10) + 1;
+            b = Math.floor(Math.random() * 10) + 1;
+            operation = '×';
+            result = a * b;
+            break;
+        case 'difficile':
+            b = Math.floor(Math.random() * 9) + 2;
+            result = Math.floor(Math.random() * 10) + 1;
+            a = b * result;
+            operation = '÷';
+            break;
+        default: // expert - mélange
+            const operations = ['+', '-', '×', '÷'];
+            operation = operations[Math.floor(Math.random() * operations.length)];
+            
+            if (operation === '+' || operation === '-') {
+                a = Math.floor(Math.random() * 20) + 1;
+                b = Math.floor(Math.random() * 20) + 1;
+                result = operation === '+' ? a + b : a - b;
+            } else if (operation === '×') {
+                a = Math.floor(Math.random() * 10) + 1;
+                b = Math.floor(Math.random() * 10) + 1;
+                result = a * b;
+            } else { // division
+                b = Math.floor(Math.random() * 9) + 2;
+                result = Math.floor(Math.random() * 10) + 1;
+                a = b * result;
+            }
+            break;
+    }
+    
+    calculMental.currentQuestion = { a, b, operation, result };
+    document.getElementById('calcul-question').textContent = `${a} ${operation} ${b} = ?`;
+    document.getElementById('calcul-reponse').value = '';
+    document.getElementById('calcul-reponse').focus();
+}
+
+function startCalculTimer() {
+    clearInterval(calculMental.timer);
+    calculMental.timeLeft = gameRules.calcul.timePerQuestion || 10;
+    document.getElementById('timer-progress').style.width = '100%';
+    document.getElementById('calcul-timer').textContent = calculMental.timeLeft;
+    
+    calculMental.timer = setInterval(() => {
+        calculMental.timeLeft--;
+        const progress = (calculMental.timeLeft / (gameRules.calcul.timePerQuestion || 10)) * 100;
+        document.getElementById('timer-progress').style.width = progress + '%';
+        document.getElementById('calcul-timer').textContent = calculMental.timeLeft;
+        
+        if (calculMental.timeLeft <= 0) {
+            clearInterval(calculMental.timer);
+            calculMental.count++;
+            document.getElementById('calcul-count').textContent = calculMental.count;
+            
+            if (calculMental.count >= gameRules.calcul.manches) {
+                endCalculGame();
+            } else {
+                generateCalculQuestion();
+                startCalculTimer();
+            }
+        }
+    }, 1000);
+}
+
+function validateCalculAnswer() {
+    if (currentGameType !== 'calcul') return;
+    
+    const userAnswer = parseInt(document.getElementById('calcul-reponse').value);
+    const correctAnswer = calculMental.currentQuestion.result;
+    
+    if (isNaN(userAnswer)) {
+        document.getElementById('resultat-calcul').textContent = "Veuillez entrer un nombre!";
+        document.getElementById('resultat-calcul').style.color = '#FF6B6B';
+        return;
+    }
+    
+    clearInterval(calculMental.timer);
+    
+    if (userAnswer === correctAnswer) {
+        calculMental.score++;
+        document.getElementById('calcul-score').textContent = calculMental.score;
+        document.getElementById('resultat-calcul').textContent = "✅ Bonne réponse!";
+        document.getElementById('resultat-calcul').style.color = '#4CAF50';
+    } else {
+        document.getElementById('resultat-calcul').textContent = `❌ Mauvaise réponse! La réponse était ${correctAnswer}`;
+        document.getElementById('resultat-calcul').style.color = '#FF6B6B';
+    }
+    
+    calculMental.count++;
+    document.getElementById('calcul-count').textContent = calculMental.count;
+    
+    if (calculMental.count >= gameRules.calcul.manches) {
+        setTimeout(endCalculGame, 1500);
+    } else {
+        setTimeout(() => {
+            generateCalculQuestion();
+            startCalculTimer();
+        }, 1500);
+    }
+}
+
+function endCalculGame() {
+    const rules = gameRules.calcul;
+    let message = `Jeu terminé! Score: ${calculMental.score}/${rules.manches}`;
+    
+    if (calculMental.score >= Math.ceil(rules.manches * 0.8)) {
+        message += ` 🎉 ${rules.victoire}`;
+    } else {
+        message += ` 💥 ${rules.defaite} - ${rules.punition}`;
+    }
+    
+    document.getElementById('resultat-calcul').textContent = message;
+    document.getElementById('calcul-reponse').disabled = true;
+    document.getElementById('btn-valider-calcul').disabled = true;
+}
+
+// =============================
+// JEU PONG
+// =============================
+function initializePong() {
+    const canvas = document.getElementById('pong-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    pongGame.canvas = canvas;
+    pongGame.ctx = ctx;
+    pongGame.ball = { 
+        x: canvas.width / 2, 
+        y: canvas.height / 2, 
+        dx: gameRules.pong.vitesse, 
+        dy: gameRules.pong.vitesse, 
+        radius: 10 
+    };
+    pongGame.playerPaddle = { x: 50, y: canvas.height / 2 - 25, width: 10, height: 50 };
+    pongGame.computerPaddle = { x: canvas.width - 60, y: canvas.height / 2 - 25, width: 10, height: 50 };
+    pongGame.playerScore = 0;
+    pongGame.computerScore = 0;
+    currentRound = 1;
+    
+    document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
+    document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
+    document.getElementById('pong-manche').textContent = currentRound;
+    document.getElementById('pong-manches').textContent = gameRules.pong.manches;
+    document.getElementById('resultat-pong').textContent = '';
+    
+    // Contrôles
+    document.addEventListener('keydown', handlePongKeyPress);
+    
+    // Démarrer le jeu
+    if (pongGame.gameLoop) clearInterval(pongGame.gameLoop);
+    pongGame.gameLoop = setInterval(updatePong, 1000 / 60);
+    
+    drawPong();
+}
+
+function handlePongKeyPress(e) {
+    if (currentGameType !== 'pong') return;
+    
+    const paddleSpeed = 10;
+    switch(e.key) {
+        case 'ArrowUp':
+            pongGame.playerPaddle.y = Math.max(0, pongGame.playerPaddle.y - paddleSpeed);
+            break;
+        case 'ArrowDown':
+            pongGame.playerPaddle.y = Math.min(
+                pongGame.canvas.height - pongGame.playerPaddle.height,
+                pongGame.playerPaddle.y + paddleSpeed
+            );
+            break;
+    }
+}
+
+function updatePong() {
+    const ball = pongGame.ball;
+    const player = pongGame.playerPaddle;
+    const computer = pongGame.computerPaddle;
+    
+    // Déplacer la balle
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+    
+    // Rebond sur les murs haut/bas
+    if (ball.y - ball.radius < 0 || ball.y + ball.radius > pongGame.canvas.height) {
+        ball.dy = -ball.dy;
+    }
+    
+    // IA de l'ordinateur
+    computer.y += (ball.y - (computer.y + computer.height / 2)) * 0.1;
+    computer.y = Math.max(0, Math.min(pongGame.canvas.height - computer.height, computer.y));
+    
+    // Collision avec les raquettes
+    if (ball.x - ball.radius < player.x + player.width && 
+        ball.y > player.y && ball.y < player.y + player.height) {
+        ball.dx = Math.abs(ball.dx);
+    }
+    
+    if (ball.x + ball.radius > computer.x && 
+        ball.y > computer.y && ball.y < computer.y + computer.height) {
+        ball.dx = -Math.abs(ball.dx);
+    }
+    
+    // Marquer un point
+    if (ball.x - ball.radius < 0) {
+        pongGame.computerScore++;
+        resetPongBall();
+    } else if (ball.x + ball.radius > pongGame.canvas.width) {
+        pongGame.playerScore++;
+        resetPongBall();
+    }
+    
+    // Mettre à jour l'affichage
+    document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
+    document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
+    
+    // Vérifier la fin de manche
+    const pointsToWin = gameRules.pong.pointsToWin || 5;
+    if (pongGame.playerScore >= pointsToWin || pongGame.computerScore >= pointsToWin) {
+        endPongRound();
+    }
+    
+    drawPong();
+}
+
+function resetPongBall() {
+    pongGame.ball.x = pongGame.canvas.width / 2;
+    pongGame.ball.y = pongGame.canvas.height / 2;
+    pongGame.ball.dx = -pongGame.ball.dx;
+    pongGame.ball.dy = (Math.random() - 0.5) * 10;
+}
+
+function drawPong() {
+    const ctx = pongGame.ctx;
+    const ball = pongGame.ball;
+    const player = pongGame.playerPaddle;
+    const computer = pongGame.computerPaddle;
+    
+    // Effacer le canvas
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, 0, pongGame.canvas.width, pongGame.canvas.height);
+    
+    // Ligne centrale
+    ctx.setLineDash([5, 15]);
+    ctx.beginPath();
+    ctx.moveTo(pongGame.canvas.width / 2, 0);
+    ctx.lineTo(pongGame.canvas.width / 2, pongGame.canvas.height);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Dessiner la balle
+    ctx.fillStyle = '#4ecdc4';
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Dessiner les raquettes
+    ctx.fillStyle = '#ff6b6b';
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    ctx.fillRect(computer.x, computer.y, computer.width, computer.height);
+}
+
+function endPongRound() {
+    currentRound++;
+    document.getElementById('pong-manche').textContent = currentRound;
+    
+    if (currentRound > gameRules.pong.manches) {
+        clearInterval(pongGame.gameLoop);
+        let message = "Match terminé! ";
+        if (pongGame.playerScore > pongGame.computerScore) {
+            message += `🎉 ${gameRules.pong.victoire}`;
+        } else {
+            message += `💥 ${gameRules.pong.defaite} - ${gameRules.pong.punition}`;
+        }
+        document.getElementById('resultat-pong').textContent = message;
+        document.removeEventListener('keydown', handlePongKeyPress);
+    } else {
+        pongGame.playerScore = 0;
+        pongGame.computerScore = 0;
+        document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
+        document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
+        resetPongBall();
+    }
+}
+
+// =============================
+// SAUVEGARDE DES STATISTIQUES
+// =============================
+function saveGameStats() {
+    const stats = JSON.parse(localStorage.getItem('gameforge_stats')) || {
+        gamesCreated: 0,
+        playersActive: 0,
+        gamesPlayed: 0
+    };
+    
+    stats.gamesCreated++;
+    stats.gamesPlayed++;
+    
+    localStorage.setItem('gameforge_stats', JSON.stringify(stats));
+    updateStats();
+}
+
+// Sauvegarder les statistiques lorsqu'un jeu est créé
+document.getElementById('btn-generer').addEventListener('click', function() {
+    setTimeout(saveGameStats, 1000);
+});

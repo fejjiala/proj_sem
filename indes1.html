@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créateur de Jeux</title>
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🎮 CréaJeux</div>
+            <nav>
+                <ul>
+                    <li><a href="#" class="nav-link active" data-page="accueil">Accueil</a></li>
+                    <li><a href="#" class="nav-link" data-page="choix">Types de Jeux</a></li>
+                    <li><a href="#" class="nav-link" data-page="personnalisation">Personnalisation</a></li>
+                    <li><a href="#" class="nav-link" data-page="jeu">Jeu</a></li>
+                </ul>
+            </nav>
+        </header>
+        
+        <!-- Page d'accueil -->
+        <section id="accueil" class="page active">
+            <h1>Bienvenue sur CréaJeux</h1>
+            <p>Créez vos propres jeux personnalisés en quelques étapes simples !</p>
+            <p>Notre plateforme vous permet de concevoir différents types de jeux, de définir vos propres règles et conditions, et de jouer immédiatement.</p>
+            <button class="btn" id="btn-creer">Créer un jeu</button>
+        </section>
+        
+        <!-- Page de choix du type de jeu -->
+        <section id="choix" class="page">
+            <h1>Choisissez un type de jeu</h1>
+            <p>Sélectionnez le type de jeu que vous souhaitez créer :</p>
+            
+            <div class="game-types">
+                <div class="game-card" data-game="xo">
+                    <div class="icon">⭕</div>
+                    <h3>XO (Tic Tac Toe)</h3>
+                    <p>Le classique jeu du morpion</p>
+                </div>
+                
+                <div class="game-card" data-game="pfc">
+                    <div class="icon">✂️</div>
+                    <h3>Pierre - Papier - Ciseaux</h3>
+                    <p>Le jeu traditionnel de mains</p>
+                </div>
+                
+                <div class="game-card" data-game="quiz">
+                    <div class="icon">❓</div>
+                    <h3>Quiz rapide</h3>
+                    <p>Testez vos connaissances</p>
+                </div>
+                
+                <div class="game-card" data-game="dice">
+                    <div class="icon">🎲</div>
+                    <h3>Jeu de Dé</h3>
+                    <p>Aléatoire et amusant</p>
+                </div>
+                
+                <div class="game-card" data-game="mots">
+                    <div class="icon">🔤</div>
+                    <h3>Mots Mêlés</h3>
+                    <p>Trouvez les mots cachés</p>
+                </div>
+                
+                <div class="game-card" data-game="snake">
+                    <div class="icon">🐍</div>
+                    <h3>Jeu du Serpent</h3>
+                    <p>Snake classique</p>
+                </div>
+                
+                <div class="game-card" data-game="action">
+                    <div class="icon">🎭</div>
+                    <h3>Action ou Vérité</h3>
+                    <p>Jeu de société populaire</p>
+                </div>
+                
+                <div class="game-card" data-game="calcul">
+                    <div class="icon">🧮</div>
+                    <h3>Calcul Mental</h3>
+                    <p>Testez vos compétences en maths</p>
+                </div>
+                
+                <div class="game-card" data-game="pong">
+                    <div class="icon">🏓</div>
+                    <h3>Pong</h3>
+                    <p>Jeu de raquette classique</p>
+                </div>
+            </div>
+            
+            <button class="btn btn-secondary" id="btn-retour-choix">Retour à l'accueil</button>
+        </section>
+        
+        <!-- Page de personnalisation -->
+        <section id="personnalisation" class="page">
+            <h1>Personnalisez votre jeu</h1>
+            <p>Définissez les règles et conditions de votre jeu :</p>
+            
+            <div class="game-container">
+                <!-- Sélection du mode de jeu -->
+                <div class="form-group">
+                    <label for="game-mode">Mode de jeu :</label>
+                    <select id="game-mode">
+                        <option value="computer">🎮 Contre l'ordinateur</option>
+                        <option value="friends">👥 Avec des amis</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="regles">Règles du jeu :</label>
+                    <textarea id="regles" placeholder="Décrivez les règles de votre jeu..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="victoire">Conditions de victoire :</label>
+                    <input type="text" id="victoire" placeholder="Ex: Aligner 3 symboles identiques">
+                </div>
+                
+                <div class="form-group">
+                    <label for="defaite">Conditions de défaite :</label>
+                    <input type="text" id="defaite" placeholder="Ex: Ne pas aligner 3 symboles">
+                </div>
+                
+                <div class="form-group">
+                    <label for="manches">Nombre de manches :</label>
+                    <input type="number" id="manches" min="1" max="10" value="3">
+                </div>
+                
+                <div class="form-group">
+                    <label for="punition">Punition du perdant :</label>
+                    <input type="text" id="punition" placeholder="Ex: Faire 10 pompes">
+                </div>
+                
+                <!-- Champs spécifiques aux jeux -->
+                <div id="jeu-specific-fields">
+                    <!-- Ces champs seront remplis dynamiquement selon le jeu -->
+                </div>
+                
+                <button class="btn" id="btn-generer">Générer le jeu</button>
+            </div>
+            
+            <button class="btn btn-secondary" id="btn-retour-perso">Retour au choix</button>
+        </section>
+        
+        <!-- Page du jeu généré -->
+        <section id="jeu" class="page">
+            <h1 id="titre-jeu">Votre jeu personnalisé</h1>
+            
+            <div class="game-container">
+                <!-- Interface du jeu XO -->
+                <div id="jeu-xo" class="jeu-type">
+                    <div class="game-board" id="xo-board"></div>
+                    <div class="game-info">
+                        <p id="mode-info-xo">Mode: Contre l'ordinateur</p>
+                        <p>Tour du joueur: <span id="joueur-actuel">X</span></p>
+                        <p>Manche: <span id="manche-actuelle">1</span>/<span id="manches-total">3</span></p>
+                    </div>
+                </div>
+                
+                <!-- Interface du jeu Pierre-Papier-Ciseaux -->
+                <div id="jeu-pfc" class="jeu-type">
+                    <div class="choices">
+                        <div class="choice" data-choice="pierre">🪨</div>
+                        <div class="choice" data-choice="papier">📄</div>
+                        <div class="choice" data-choice="ciseaux">✂️</div>
+                    </div>
+                    <div class="result" id="resultat-pfc"></div>
+                    <div class="game-info">
+                        <p id="mode-info-pfc">Mode: Contre l'ordinateur</p>
+                        <p>Score: Joueur <span id="score-joueur">0</span> - <span id="score-adversaire">0</span> <span id="adversaire-nom">Ordinateur</span></p>
+                        <p>Manche: <span id="manche-actuelle-pfc">1</span>/<span id="manches-total-pfc">3</span></p>
+                    </div>
+                </div>
+                
+                <!-- Interface du jeu Quiz -->
+                <div id="jeu-quiz" class="jeu-type">
+                    <div class="quiz-question" id="question-quiz">Quelle est la capitale de la France?</div>
+                    <div class="quiz-options">
+                        <div class="quiz-option" data-option="1">Londres</div>
+                        <div class="quiz-option" data-option="2">Berlin</div>
+                        <div class="quiz-option" data-option="3">Paris</div>
+                        <div class="quiz-option" data-option="4">Madrid</div>
+                    </div>
+                    <div class="result" id="resultat-quiz"></div>
+                    <div class="game-info">
+                        <p id="mode-info-quiz">Mode: Solo</p>
+                        <p>Score: <span id="score-quiz">0</span>/<span id="questions-total">5</span></p>
+                    </div>
+                </div>
+                
+                <!-- Interface du jeu de Dé -->
+                <div id="jeu-dice" class="jeu-type">
+                    <div class="dice-container" id="de">🎲</div>
+                    <div class="result" id="resultat-dice"></div>
+                    <div class="game-info">
+                        <p id="mode-info-dice">Mode: Solo</p>
+                        <p>Score: <span id="score-dice">0</span></p>
+                    </div>
+                </div>
+                
+                <!-- Interface du jeu Mots Mêlés -->
+                <div id="jeu-mots" class="jeu-type">
+                    <div class="word-search-container">
+                        <div class="word-search-grid" id="mots-grid"></div>
+                        <div class="words-to-find">
+                            <h4>Mots à trouver :</h4>
+                            <div id="word-list"></div>
+                        </div>
+                    </div>
+                    <div class="game-info">
+                        <p id="mode-info-mots">Mode: Solo</p>
+                        <p>Mots trouvés: <span id="mots-trouves">0</span>/<span id="mots-total">0</span></p>
+                        <div class="result" id="resultat-mots"></div>
+                    </div>
+                </div>
+                
+                <!-- Interface du jeu Snake -->
+                <div id="jeu-snake" class="jeu-type">
+                    <div class="snake-container">
+                        <canvas id="snake-canvas" width="400" height="400"></canvas>
+                        <div class="snake-controls">
+                            <div class="control-row">
+                                <button class="control-btn" id="up">↑</button>
+                            </div>
+                            <div class="control-row">
+                                <button class="control-btn" id="left">←</button>
+                                <button class="control-btn" id="down">↓</button>
+                                <button class="control-btn" id="right">→</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="game-info">
+                        <p id="mode-info-snake">Mode: Solo</p>
+                        <p>Score: <span id="snake-score">0</span></p>
+                        <p>Longueur: <span id="snake-length">1</span></p>
+                        <div class="result" id="resultat-snake"></div>
+                    </div>
+                </div>
+                
+                <!-- Interface du jeu Action ou Vérité -->
+                <div id="jeu-action" class="jeu-type">
+                    <div class="action-verite-container">
+                        <div class="card" id="action-card">
+                            <h3>Action ou Vérité ?</h3>
+                            <div class="card-content" id="card-content">
+                                Cliquez sur un bouton pour commencer!
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn-action" id="btn-action">🎭 Action</button>
+                            <button class="btn-verite" id="btn-verite">📖 Vérité</button>
+                            <button class="btn-next" id="btn-next-player">👥 Joueur Suivant</button>
+                        </div>
+                    </div>
+                    <div class="game-info">
+                        <p id="mode-info-action">Mode: Avec des amis</p>
+                        <p>Tour du joueur: <span id="current-player">Joueur 1</span></p>
+                        <p>Tour: <span id="tour-action">1</span>/<span id="tours-total">10</span></p>
+                        <div class="result" id="resultat-action"></div>
+                    </div>
+                </div>
+                
+                <!-- Interface du jeu Calcul Mental -->
+                <div id="jeu-calcul" class="jeu-type">
+                    <div class="calcul-container">
+                        <div class="calcul-question" id="calcul-question">3 + 5 = ?</div>
+                        <div class="calcul-options">
+                            <input type="number" id="calcul-reponse" placeholder="Votre réponse">
+                            <button class="btn" id="btn-valider-calcul">Valider</button>
+                        </div>
+                        <div class="calcul-timer">
+                            <div class="timer-bar">
+                                <div class="timer-progress" id="timer-progress"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="game-info">
+                        <p id="mode-info-calcul">Mode: Solo</p>
+                        <p>Score: <span id="calcul-score">0</span></p>
+                        <p>Questions: <span id="calcul-count">0</span>/<span id="calcul-total">10</span></p>
+                        <div class="result" id="resultat-calcul"></div>
+                    </div>
+                </div>
+                
+                <!-- Interface du jeu Pong -->
+                <div id="jeu-pong" class="jeu-type">
+                    <div class="pong-container">
+                        <canvas id="pong-canvas" width="600" height="400"></canvas>
+                    </div>
+                    <div class="game-info">
+                        <p id="mode-info-pong">Mode: Contre l'ordinateur</p>
+                        <p>Score: Joueur <span id="pong-score-joueur">0</span> - <span id="pong-score-adversaire">0</span> <span id="pong-adversaire-nom">Ordinateur</span></p>
+                        <p>Manche: <span id="pong-manche">1</span>/<span id="pong-manches">3</span></p>
+                        <div class="result" id="resultat-pong"></div>
+                    </div>
+                </div>
+                
+                <button class="btn" id="btn-rejouer">Rejouer</button>
+            </div>
+            
+            <button class="btn btn-secondary" id="btn-retour-jeu">Créer un autre jeu</button>
+        </section>
+        
+        <footer>
+            <p>© 2023 CréaJeux - Créez vos propres jeux en ligne</p>
+        </footer>
+    </div>
+
+    <script src="script1.js"></script>
+</body>
+</html>

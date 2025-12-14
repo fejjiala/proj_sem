@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameForge - Créez vos jeux personnalisés</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Mode Clair/Sombre -->
+    <div class="theme-toggle">
+        <button id="themeBtn">
+            <i class="fas fa-moon"></i>
+        </button>
+    </div>
+
+    <!-- Header avec animations -->
+    <header>
+        <div class="logo-container">
+            <div class="logo-animation">
+                <div class="cube"></div>
+                <div class="cube"></div>
+                <div class="cube"></div>
+            </div>
+            <h1><span class="logo-text">Game</span><span class="logo-forge">Forge</span></h1>
+            <p class="tagline">Forgez vos jeux, forgez votre fun !</p>
+        </div>
+        
+        <nav>
+            <ul>
+                <li><a href="#home" class="nav-link active"><i class="fas fa-home"></i> Accueil</a></li>
+                <li><a href="#games" class="nav-link"><i class="fas fa-gamepad"></i> Jeux</a></li>
+                <li><a href="#create" class="nav-link"><i class="fas fa-plus-circle"></i> Créer</a></li>
+                <li><a href="#gallery" class="nav-link"><i class="fas fa-images"></i> Galerie</a></li>
+                <li><a href="#about" class="nav-link"><i class="fas fa-info-circle"></i> À propos</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Section Accueil -->
+    <section id="home" class="section active">
+        <div class="hero">
+            <div class="hero-content">
+                <h2 class="animate-text">Créez votre jeu en <span class="highlight">2 minutes</span> sans coder !</h2>
+                <p class="hero-description">Personnalisez les règles, conditions de victoire, pénalités et mécaniques de jeu en quelques clics.</p>
+                
+                <div class="cta-buttons">
+                    <button class="btn-primary pulse" id="startCreating">
+                        <i class="fas fa-magic"></i> Commencer à créer
+                    </button>
+                    <button class="btn-secondary" id="exploreGames">
+                        <i class="fas fa-compass"></i> Explorer les jeux
+                    </button>
+                </div>
+                
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-sliders-h"></i>
+                        </div>
+                        <h3>Personnalisation Complète</h3>
+                        <p>Modifiez toutes les règles du jeu selon vos envies</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Génération Instantanée</h3>
+                        <p>Votre jeu est créé et jouable immédiatement</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-share-alt"></i>
+                        </div>
+                        <h3>Partage Facile</h3>
+                        <p>Partagez vos créations avec la communauté</p>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-animation">
+                <div class="floating-shapes">
+                    <div class="shape shape1"></div>
+                    <div class="shape shape2"></div>
+                    <div class="shape shape3"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Jeux -->
+    <section id="games" class="section">
+        <h2 class="section-title">Nos Jeux Disponibles</h2>
+        <p class="section-subtitle">Chaque jeu peut être joué en mode classique ou entièrement personnalisé</p>
+        
+        <div class="games-container">
+            <!-- Tic Tac Toe -->
+            <div class="game-card" data-game="tictactoe">
+                <div class="game-icon">
+                    <i class="fas fa-times"></i>
+                </div>
+                <h3>Tic Tac Toe</h3>
+                <p>Jeu de stratégie 3x3</p>
+                <div class="game-buttons">
+                    <button class="btn-play" data-action="play"><i class="fas fa-play"></i> Jouer</button>
+                    <button class="btn-customize" data-action="customize"><i class="fas fa-cogs"></i> Personnaliser</button>
+                </div>
+            </div>
+
+            <!-- Snake -->
+            <div class="game-card" data-game="snake">
+                <div class="game-icon">
+                    <i class="fas fa-snake"></i>
+                </div>
+                <h3>Jeu du Serpent</h3>
+                <p>Contrôlez le serpent, mangez, grandissez</p>
+                <div class="game-buttons">
+                    <button class="btn-play" data-action="play"><i class="fas fa-play"></i> Jouer</button>
+                    <button class="btn-customize" data-action="customize"><i class="fas fa-cogs"></i> Personnaliser</button>
+                </div>
+            </div>
+
+            <!-- Mots Mêlés -->
+            <div class="game-card" data-game="wordsearch">
+                <div class="game-icon">
+                    <i class="fas fa-font"></i>
+                </div>
+                <h3>Mots Mêlés</h3>
+                <p>Trouvez les mots cachés dans la grille</p>
+                <div class="game-buttons">
+                    <button class="btn-play" data-action="play"><i class="fas fa-play"></i> Jouer</button>
+                    <button class="btn-customize" data-action="customize"><i class="fas fa-cogs"></i> Personnaliser</button>
+                </div>
+            </div>
+
+            <!-- Action ou Vérité -->
+            <div class="game-card" data-game="truthordare">
+                <div class="game-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <h3>Action ou Vérité</h3>
+                <p>Jeu social avec défis et questions</p>
+                <div class="game-buttons">
+                    <button class="btn-play" data-action="play"><i class="fas fa-play"></i> Jouer</button>
+                    <button class="btn-customize" data-action="customize"><i class="fas fa-cogs"></i> Personnaliser</button>
+                </div>
+            </div>
+
+            <!-- Calcul Mental -->
+            <div class="game-card" data-game="math">
+                <div class="game-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <h3>Calcul Mental</h3>
+                <p>Testez vos compétences en mathématiques</p>
+                <div class="game-buttons">
+                    <button class="btn-play" data-action="play"><i class="fas fa-play"></i> Jouer</button>
+                    <button class="btn-customize" data-action="customize"><i class="fas fa-cogs"></i> Personnaliser</button>
+                </div>
+            </div>
+
+            <!-- Ping Pong -->
+            <div class="game-card" data-game="pong">
+                <div class="game-icon">
+                    <i class="fas fa-table-tennis"></i>
+                </div>
+                <h3>Ping Pong</h3>
+                <p>Jeu classique de raquette</p>
+                <div class="game-buttons">
+                    <button class="btn-play" data-action="play"><i class="fas fa-play"></i> Jouer</button>
+                    <button class="btn-customize" data-action="customize"><i class="fas fa-cogs"></i> Personnaliser</button>
+                </div>
+            </div>
+
+            <!-- Pierre-Papier-Ciseaux -->
+            <div class="game-card" data-game="rps">
+                <div class="game-icon">
+                    <i class="fas fa-hand-scissors"></i>
+                </div>
+                <h3>Pierre-Papier-Ciseaux</h3>
+                <p>Le jeu classique de mains</p>
+                <div class="game-buttons">
+                    <button class="btn-play" data-action="play"><i class="fas fa-play"></i> Jouer</button>
+                    <button class="btn-customize" data-action="customize"><i class="fas fa-cogs"></i> Personnaliser</button>
+                </div>
+            </div>
+
+            <!-- Quiz -->
+            <div class="game-card" data-game="quiz">
+                <div class="game-icon">
+                    <i class="fas fa-question"></i>
+                </div>
+                <h3>Quiz Général</h3>
+                <p>Testez vos connaissances</p>
+                <div class="game-buttons">
+                    <button class="btn-play" data-action="play"><i class="fas fa-play"></i> Jouer</button>
+                    <button class="btn-customize" data-action="customize"><i class="fas fa-cogs"></i> Personnaliser</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Création -->
+    <section id="create" class="section">
+        <div class="creation-container">
+            <h2 class="section-title">Personnalisez votre jeu</h2>
+            
+            <div class="creation-wizard">
+                <div class="wizard-steps">
+                    <div class="step active" data-step="1">
+                        <span class="step-number">1</span>
+                        <span class="step-label">Choix du jeu</span>
+                    </div>
+                    <div class="step" data-step="2">
+                        <span class="step-number">2</span>
+                        <span class="step-label">Règles</span>
+                    </div>
+                    <div class="step" data-step="3">
+                        <span class="step-number">3</span>
+                        <span class="step-label">Conditions</span>
+                    </div>
+                    <div class="step" data-step="4">
+                        <span class="step-number">4</span>
+                        <span class="step-label">Pénalités</span>
+                    </div>
+                    <div class="step" data-step="5">
+                        <span class="step-number">5</span>
+                        <span class="step-label">Mécaniques</span>
+                    </div>
+                </div>
+
+                <div class="wizard-content">
+                    <!-- Étape 1: Choix du jeu -->
+                    <div class="step-content active" data-step="1">
+                        <h3>Sélectionnez un jeu à personnaliser</h3>
+                        <div class="game-selection" id="gameSelection">
+                            <!-- Les jeux seront chargés dynamiquement ici -->
+                        </div>
+                    </div>
+
+                    <!-- Étape 2: Règles -->
+                    <div class="step-content" data-step="2">
+                        <h3>Définissez les règles du jeu</h3>
+                        <div class="rules-customization">
+                            <div class="form-group">
+                                <label for="ruleType">Type de règles :</label>
+                                <select id="ruleType" class="form-control">
+                                    <option value="classic">Classiques</option>
+                                    <option value="custom">Personnalisées</option>
+                                    <option value="mixed">Mixtes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="customRules">Règles personnalisées :</label>
+                                <textarea id="customRules" class="form-control" rows="4" placeholder="Exemple: Le joueur X commence toujours, les diagonales comptent double..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="rounds">Nombre de rounds :</label>
+                                <input type="range" id="rounds" min="1" max="10" value="3" class="form-control">
+                                <span id="roundsValue">3 rounds</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Étape 3: Conditions -->
+                    <div class="step-content" data-step="3">
+                        <h3>Conditions de victoire/défaite</h3>
+                        <div class="conditions-customization">
+                            <div class="condition-card">
+                                <h4>Conditions de victoire</h4>
+                                <div class="condition-options">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="winConditions" value="score">
+                                        <span>Atteindre un score spécifique</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="winConditions" value="time">
+                                        <span>Terminer en premier</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="winConditions" value="combo">
+                                        <span>Réaliser un combo</span>
+                                    </label>
+                                    <div class="form-group">
+                                        <label for="targetScore">Score cible :</label>
+                                        <input type="number" id="targetScore" class="form-control" min="1" max="1000" value="100">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="condition-card">
+                                <h4>Conditions de défaite</h4>
+                                <div class="condition-options">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="loseConditions" value="timeout">
+                                        <span>Dépassement du temps</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="loseConditions" value="zero">
+                                        <span>Score à zéro</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="loseConditions" value="error">
+                                        <span>Trop d'erreurs</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Étape 4: Pénalités -->
+                    <div class="step-content" data-step="4">
+                        <h3>Pénalités pour le perdant</h3>
+                        <div class="penalties-customization">
+                            <div class="penalty-options">
+                                <label class="radio-label">
+                                    <input type="radio" name="penalty" value="none" checked>
+                                    <span>Aucune pénalité</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="penalty" value="score">
+                                    <span>Perte de points</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="penalty" value="time">
+                                    <span>Temps réduit au prochain tour</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="penalty" value="custom">
+                                    <span>Pénalité personnalisée</span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="customPenalty">Description de la pénalité :</label>
+                                <textarea id="customPenalty" class="form-control" rows="3" placeholder="Exemple: Le perdant doit chanter une chanson..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Étape 5: Mécaniques -->
+                    <div class="step-content" data-step="5">
+                        <h3>Mécaniques spéciales</h3>
+                        <div class="mechanics-customization">
+                            <div class="form-group">
+                                <label for="difficulty">Niveau de difficulté :</label>
+                                <select id="difficulty" class="form-control">
+                                    <option value="easy">Facile</option>
+                                    <option value="medium" selected>Moyen</option>
+                                    <option value="hard">Difficile</option>
+                                    <option value="extreme">Extrême</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="powerups">Power-ups activés :</label>
+                                <div class="powerup-options">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="powerups" value="speed">
+                                        <span>Boost de vitesse</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="powerups" value="shield">
+                                        <span>Bouclier temporaire</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="powerups" value="double">
+                                        <span>Points doublés</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="timeLimit">Limite de temps (secondes) :</label>
+                                <input type="number" id="timeLimit" class="form-control" min="10" max="300" value="60">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wizard-controls">
+                    <button class="btn-prev" id="prevStep">
+                        <i class="fas fa-arrow-left"></i> Précédent
+                    </button>
+                    <button class="btn-next" id="nextStep">
+                        Suivant <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button class="btn-generate" id="generateGame">
+                        <i class="fas fa-cogs"></i> Générer le jeu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Galerie -->
+    <section id="gallery" class="section">
+        <h2 class="section-title">Galerie des jeux créés</h2>
+        <div class="gallery-container" id="gamesGallery">
+            <!-- Les jeux sauvegardés apparaîtront ici -->
+        </div>
+    </section>
+
+    <!-- Section À propos -->
+    <section id="about" class="section">
+        <div class="about-container">
+            <h2 class="section-title">À propos de GameForge</h2>
+            
+            <div class="about-content">
+                <div class="about-text">
+                    <h3>Notre Mission</h3>
+                    <p>GameForge a été créé dans le cadre d'un projet semestriel à l'École Nationale d'Ingénieurs de Sousse. Notre objectif est de rendre la création de jeux accessible à tous, sans nécessiter de compétences en programmation.</p>
+                    
+                    <h3>Notre Équipe</h3>
+                    <div class="team-members">
+                        <div class="member">
+                            <i class="fas fa-user"></i>
+                            <h4>Feiji Ala</h4>
+                            <p>Développeur Front-end</p>
+                        </div>
+                        <div class="member">
+                            <i class="fas fa-user"></i>
+                            <h4>Hadil Gharbi</h4>
+                            <p>Designer UI/UX</p>
+                        </div>
+                        <div class="member">
+                            <i class="fas fa-user"></i>
+                            <h4>Ben Nejma Sondos</h4>
+                            <p>Développeur Back-end</p>
+                        </div>
+                    </div>
+                    
+                    <h3>Encadrement</h3>
+                    <p>Dr. Manel Fourati - École Nationale d'Ingénieurs de Sousse</p>
+                </div>
+                
+                <div class="about-features">
+                    <h3>Fonctionnalités Clés</h3>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> Personnalisation complète des règles</li>
+                        <li><i class="fas fa-check-circle"></i> 8 jeux différents disponibles</li>
+                        <li><i class="fas fa-check-circle"></i> Interface intuitive et responsive</li>
+                        <li><i class="fas fa-check-circle"></i> Sauvegarde des jeux créés</li>
+                        <li><i class="fas fa-check-circle"></i> Mode classique et personnalisé</li>
+                        <li><i class="fas fa-check-circle"></i> Sans aucune ligne de code requise</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal de jeu -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Jeu</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="gameContainer">
+                <!-- Le jeu sera chargé ici -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="resetGame">
+                    <i class="fas fa-redo"></i> Recommencer
+                </button>
+                <button class="btn-primary" id="saveGame">
+                    <i class="fas fa-save"></i> Sauvegarder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <h3>GameForge</h3>
+                <p>Projet semestriel - ENISo</p>
+            </div>
+            
+            <div class="footer-links">
+                <h4>Liens rapides</h4>
+                <ul>
+                    <li><a href="#home">Accueil</a></li>
+                    <li><a href="#games">Jeux</a></li>
+                    <li><a href="#create">Créer</a></li>
+                    <li><a href="#gallery">Galerie</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-social">
+                <h4>Suivez-nous</h4>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2024 GameForge - École Nationale d'Ingénieurs de Sousse. Tous droits réservés.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <!-- Scripts des jeux -->
+    <script src="games/tictactoe.js"></script>
+    <script src="games/snake.js"></script>
+    <script src="games/wordsearch.js"></script>
+    <script src="games/truthordare.js"></script>
+    <script src="games/math.js"></script>
+    <script src="games/pong.js"></script>
+    <script src="games/rps.js"></script>
+    <script src="games/quiz.js"></script>
+</body>
+</html>
