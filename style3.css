@@ -1,0 +1,461 @@
+:root {
+    --primary: #6c63ff;
+    --secondary: #ff6584;
+    --dark: #2d2b55;
+    --light: #f8f9fa;
+    --text: #333;
+    --bg: #ffffff;
+    --card: #ffffff;
+    --shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] {
+    --primary: #8a84ff;
+    --secondary: #ff7b9c;
+    --dark: #1a1a2e;
+    --light: #2d2b55;
+    --text: #f8f9fa;
+    --bg: #121212;
+    --card: #1e1e2e;
+    --shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    padding: 1rem 2rem;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+    box-shadow: var(--shadow);
+}
+
+.logo-container {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.logo-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    color: white;
+}
+
+.logo-forge {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    color: #ffd700;
+}
+
+nav ul {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    gap: 2rem;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    transition: 0.3s;
+}
+
+.nav-link.active {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Sections */
+.section {
+    min-height: 100vh;
+    padding: 100px 2rem 2rem;
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+/* Hero */
+.hero {
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.animate-text {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.highlight {
+    color: var(--secondary);
+}
+
+/* Boutons */
+.btn-primary, .btn-secondary {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    color: white;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(108,99,255,0.3);
+}
+
+/* Cartes de jeu */
+.games-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.game-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    transition: 0.3s;
+}
+
+.game-card:hover {
+    transform: translateY(-10px);
+}
+
+.game-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 2rem;
+    color: white;
+}
+
+/* Assistant de création */
+.creation-wizard {
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--card);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+}
+
+.wizard-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--light);
+}
+
+.step {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    background: var(--light);
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.step.active {
+    background: var(--primary);
+    color: white;
+}
+
+.step-content {
+    min-height: 300px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid var(--light);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+}
+
+/* Pénalités */
+.penalty-options {
+    margin-bottom: 2rem;
+}
+
+.penalty-preview {
+    background: var(--light);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-left: 4px solid var(--secondary);
+}
+
+.preview-box {
+    padding: 1rem;
+    background: var(--bg);
+    border-radius: 5px;
+    font-style: italic;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--bg);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+/* Styles pour les jeux */
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.cell {
+    width: 100px;
+    height: 100px;
+    background: var(--card);
+    border: 3px solid var(--primary);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+#snake-canvas {
+    display: block;
+    margin: 0 auto;
+    border: 3px solid var(--primary);
+    border-radius: 10px;
+    background: var(--dark);
+}
+
+/* Galerie */
+.gallery-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.gallery-item {
+    background: var(--card);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .section-title {
+        font-size: 2rem;
+    }
+    
+    .animate-text {
+        font-size: 2rem;
+    }
+    
+    .games-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .wizard-steps {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+/* Styles pour le timer des mots mêlés */
+.timer {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ff6b6b;
+    margin-top: 10px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    display: inline-block;
+}
+
+/* Styles pour les punitions */
+.punition {
+    color: #ff6b6b;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 5px;
+    border-left: 3px solid #ff6b6b;
+}
+
+/* Correction pour le canvas Snake et Pong */
+#snake-canvas, #pong-canvas {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    display: block;
+    margin: 0 auto;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Styles pour le jeu Mots Mêlés amélioré */
+.word-cell.selected {
+    background: #4ecdc4 !important;
+    color: white !important;
+    transform: scale(1.05);
+    transition: transform 0.2s;
+}
+
+.word-item.found {
+    text-decoration: line-through !important;
+    color: #4ecdc4 !important;
+    opacity: 0.7;
+}
+
+/* Styles pour les boutons de contrôle */
+.control-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 5px;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+/* Styles pour le timer de calcul */
+.timer-bar {
+    height: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.timer-progress {
+    height: 100%;
+    background: linear-gradient(90deg, #4ecdc4, #2ecc71);
+    width: 100%;
+    transition: width 1s linear;
+}
+
+.timer-text {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4ecdc4;
+}

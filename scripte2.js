@@ -15,7 +15,7 @@ let gameRules = {
     pfc: { regles: "", victoire: "", defaite: "", manches: 3, punition: "" },
     quiz: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
     dice: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
-    mots: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", mots: "", gridSize: 10 },
+    mots: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", mots: "", gridSize: 10, timer: 60 },
     snake: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", vitesse: 5, scoreGoal: 50 },
     action: { regles: "", victoire: "", defaite: "", manches: 10, punition: "", actions: "", verites: "", timePerQuestion: 10 },
     calcul: { regles: "", victoire: "", defaite: "", manches: 10, punition: "", niveau: "facile", timePerQuestion: 10 },
@@ -34,7 +34,8 @@ let snakeGame = {
     food: {},
     gridSize: 20,
     score: 0,
-    gameLoop: null
+    gameLoop: null,
+    isInitialized: false
 };
 
 let pongGame = {
@@ -45,7 +46,9 @@ let pongGame = {
     computerPaddle: { x: 540, y: 175, width: 10, height: 50 },
     playerScore: 0,
     computerScore: 0,
-    gameLoop: null
+    gameLoop: null,
+    keys: {},
+    isInitialized: false
 };
 
 let actionVerite = {
@@ -68,7 +71,9 @@ let motsMelees = {
     grid: [],
     words: [],
     foundWords: [],
-    selectedCells: []
+    selectedCells: [],
+    gameTimer: null,
+    timeLeft: 60
 };
 
 let quizQuestions = [
@@ -217,8 +222,8 @@ function prefillCustomizationFields(gameType) {
             punition: "Sauter sur un pied 10 fois"
         },
         'mots': {
-            regles: "Trouvez tous les mots cachés dans la grille. Les mots peuvent être placés horizontalement, verticalement ou en diagonale.",
-            victoire: "Trouver tous les mots dans la grille",
+            regles: "Trouvez tous les mots cachés dans la grille. Les mots peuvent être placés horizontalement, verticalement ou en diagonale. Vous avez 1 minute.",
+            victoire: "Trouver tous les mots dans la grille avant la fin du temps",
             defaite: "Ne pas trouver tous les mots dans le temps imparti",
             manches: 1,
             punition: "Écrire 10 fois chaque mot non trouvé",
@@ -322,6 +327,10 @@ function addSpecificFields(gameType, defaultValues) {
                         <option value="12">12x12</option>
                         <option value="15">15x15</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="mots-timer">Temps limite (secondes) :</label>
+                    <input type="number" id="mots-timer" min="30" max="180" value="60">
                 </div>
             `;
             break;
@@ -435,6 +444,7 @@ function generateGame() {
         case 'mots':
             gameRules.mots.mots = document.getElementById('mots-list').value;
             gameRules.mots.gridSize = parseInt(document.getElementById('grid-size-mots').value);
+            gameRules.mots.timer = parseInt(document.getElementById('mots-timer').value) || 60;
             break;
         case 'snake':
             gameRules.snake.vitesse = parseInt(document.getElementById('snake-speed').value);
@@ -524,8 +534,8 @@ function updateGameInterfaceWithCustomRules() {
             <p><strong>Règles :</strong> ${rules.regles}</p>
             <p><strong>Victoire :</strong> ${rules.victoire}</p>
             <p><strong>Défaite :</strong> ${rules.defaite}</p>
-            <p><strong>Manches :</strong> ${rules.manches}</p>
-            <p><strong>Pénalité :</strong> ${rules.punition}</p>
+            ${rules.manches ? `<p><strong>Manches :</strong> ${rules.manches}</p>` : ''}
+            ${rules.punition ? `<p><strong>Pénalité du perdant :</strong> ${rules.punition}</p>` : ''}
         </div>
     `;
 }
@@ -720,9 +730,12 @@ function endXOGame(message, rules) {
     const resultDiv = document.createElement('div');
     resultDiv.className = 'result';
     
+    // Toujours afficher la punition à la fin du jeu
     let punishmentText = '';
-    if (message.includes('gagné') && message.includes('O')) {
+    if (message.includes('gagné')) {
         punishmentText = `<p class="punition">💥 Le perdant doit: ${rules.punition}</p>`;
+    } else {
+        punishmentText = `<p class="punition">💥 Les deux joueurs doivent: ${rules.punition}</p>`;
     }
     
     resultDiv.innerHTML = `
@@ -802,13 +815,22 @@ function handlePFCClick() {
     
     if (currentRound > rules.manches) {
         let finalResult = "Match nul!";
+        let punishmentText = `<p class="punition">💥 Les deux joueurs doivent: ${rules.punition}</p>`;
+        
         if (playerScore > computerScore) {
             finalResult = `🎉 Félicitations, vous avez gagné le match! ${rules.victoire}`;
+            punishmentText = `<p class="punition">💥 Le perdant doit: ${rules.punition}</p>`;
         } else if (computerScore > playerScore) {
-            finalResult = `💥 ${currentGameMode === 'computer' ? "L'ordinateur" : "L'adversaire"} a gagné! ${rules.defaite} - Punition: ${rules.punition}`;
+            finalResult = `💥 ${currentGameMode === 'computer' ? "L'ordinateur" : "L'adversaire"} a gagné! ${rules.defaite}`;
+            punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition}</p>`;
         }
         
-        document.getElementById('resultat-pfc').textContent = finalResult;
+        const gameInfo = document.querySelector('#jeu-pfc .game-info');
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'result';
+        resultDiv.innerHTML = `<h3>${finalResult}</h3>${punishmentText}`;
+        gameInfo.appendChild(resultDiv);
+        
         document.querySelectorAll('.choice').forEach(c => {
             c.style.pointerEvents = 'none';
         });
@@ -898,14 +920,19 @@ function handleQuizClick() {
 function endQuizGame() {
     const rules = gameRules.quiz;
     let finalMessage = `Quiz terminé! Votre score: ${quizScore}/${quizQuestions.length}`;
+    let punishmentText = '';
     
     if (quizScore >= Math.ceil(quizQuestions.length / 2)) {
         finalMessage += ` 🎉 ${rules.victoire}`;
+        punishmentText = `<p class="punition">💥 Vous avez évité la punition!</p>`;
     } else {
-        finalMessage += ` 💥 ${rules.defaite} - ${rules.punition}`;
+        finalMessage += ` 💥 ${rules.defaite}`;
+        punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition}</p>`;
     }
     
-    document.getElementById('resultat-quiz').textContent = finalMessage;
+    const resultDiv = document.getElementById('resultat-quiz');
+    resultDiv.innerHTML = `<h3>${finalMessage}</h3>${punishmentText}`;
+    
     document.querySelectorAll('.quiz-option').forEach(opt => {
         opt.style.pointerEvents = 'none';
     });
@@ -949,15 +976,18 @@ function rollDice() {
         // Vérifier la victoire
         const rules = gameRules.dice;
         if (diceScore >= 15) {
-            document.getElementById('resultat-dice').textContent = 
-               `🎉 Félicitations! ${rules.victoire}`;
+            const resultDiv = document.getElementById('resultat-dice');
+            resultDiv.innerHTML = `
+                <h3>🎉 Félicitations! ${rules.victoire}</h3>
+                <p class="punition">💥 Vous avez évité la punition!</p>
+            `;
             document.getElementById('btn-roll-dice').disabled = true;
         }
     }, 1000);
 }
 
 // =============================
-// JEU MOTS MÊLÉS
+// JEU MOTS MÊLÉS (avec timer)
 // =============================
 function initializeMotsMelees() {
     const rules = gameRules.mots;
@@ -973,16 +1003,42 @@ function initializeMotsMelees() {
     motsMelees.words = mots;
     motsMelees.foundWords = [];
     motsMelees.selectedCells = [];
+    motsMelees.timeLeft = rules.timer || 60;
     
     document.getElementById('mots-trouves').textContent = '0';
     document.getElementById('mots-total').textContent = mots.length;
-    document.getElementById('resultat-mots').textContent = '';
+    
+    // Créer l'élément timer s'il n'existe pas
+    let timerElement = document.getElementById('mots-timer');
+    if (!timerElement) {
+        timerElement = document.createElement('div');
+        timerElement.id = 'mots-timer';
+        timerElement.className = 'timer';
+        document.querySelector('#jeu-mots .game-info').appendChild(timerElement);
+    }
     
     // Générer la grille
     generateWordSearchGrid();
     
     // Afficher la liste des mots
     displayWordList();
+    
+    // Démarrer le timer
+    startMotsTimer();
+}
+
+function startMotsTimer() {
+    clearInterval(motsMelees.gameTimer);
+    
+    motsMelees.gameTimer = setInterval(() => {
+        motsMelees.timeLeft--;
+        document.getElementById('mots-timer').textContent = `Temps restant: ${motsMelees.timeLeft}s`;
+        
+        if (motsMelees.timeLeft <= 0) {
+            clearInterval(motsMelees.gameTimer);
+            endMotsGame(false);
+        }
+    }, 1000);
 }
 
 function generateWordSearchGrid() {
@@ -1110,6 +1166,11 @@ function selectWordCell(row, col) {
     checkWordAtPosition(row, col);
     
     cell.classList.add('selected');
+    
+    // Vérifier si tous les mots sont trouvés
+    if (motsMelees.foundWords.length === motsMelees.words.length) {
+        endMotsGame(true);
+    }
 }
 
 function checkWordAtPosition(row, col) {
@@ -1158,24 +1219,53 @@ function updateFoundWords() {
             item.style.color = '#4CAF50';
         }
     });
+}
+
+function endMotsGame(hasWon) {
+    clearInterval(motsMelees.gameTimer);
+    const rules = gameRules.mots;
     
-    if (motsMelees.foundWords.length === motsMelees.words.length) {
-        document.getElementById('resultat-mots').textContent = `🎉 ${gameRules.mots.victoire}`;
+    let message = '';
+    let punishmentText = '';
+    
+    if (hasWon) {
+        message = `🎉 Félicitations! Vous avez trouvé tous les mots en ${rules.timer - motsMelees.timeLeft} secondes! ${rules.victoire}`;
+        punishmentText = `<p class="punition">💥 Vous avez évité la punition!</p>`;
+    } else {
+        message = `💥 Temps écoulé! Vous avez trouvé ${motsMelees.foundWords.length}/${motsMelees.words.length} mots. ${rules.defaite}`;
+        const motsNonTrouves = motsMelees.words.filter(mot => !motsMelees.foundWords.includes(mot));
+        punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition.replace('chaque mot non trouvé', `écrire 10 fois "${motsNonTrouves.join(', ')}"`)}</p>`;
     }
+    
+    const resultDiv = document.getElementById('resultat-mots');
+    resultDiv.innerHTML = `<h3>${message}</h3>${punishmentText}`;
+    
+    // Désactiver les cellules
+    document.querySelectorAll('.word-cell').forEach(cell => {
+        cell.style.pointerEvents = 'none';
+    });
 }
 
 // =============================
-// JEU SNAKE
+// JEU SNAKE (CORRIGÉ)
 // =============================
 function initializeSnake() {
     const canvas = document.getElementById('snake-canvas');
     const ctx = canvas.getContext('2d');
     
+    // Arrêter le jeu précédent s'il existe
+    if (snakeGame.gameLoop) {
+        clearInterval(snakeGame.gameLoop);
+        document.removeEventListener('keydown', handleSnakeKeyPress);
+    }
+    
+    // Réinitialiser le jeu
     snakeGame.canvas = canvas;
     snakeGame.ctx = ctx;
     snakeGame.snake = [{x: 10, y: 10}];
     snakeGame.direction = 'right';
     snakeGame.score = 0;
+    snakeGame.isInitialized = true;
     
     generateSnakeFood();
     
@@ -1183,21 +1273,43 @@ function initializeSnake() {
     document.getElementById('snake-length').textContent = snakeGame.snake.length;
     document.getElementById('resultat-snake').textContent = '';
     
-    if (snakeGame.gameLoop) clearInterval(snakeGame.gameLoop);
+    // Réinitialiser les écouteurs d'événements pour les boutons
+    const upBtn = document.getElementById('up');
+    const downBtn = document.getElementById('down');
+    const leftBtn = document.getElementById('left');
+    const rightBtn = document.getElementById('right');
     
+    // Supprimer les anciens écouteurs
+    if (upBtn) {
+        upBtn.onclick = null;
+        upBtn.addEventListener('click', () => changeSnakeDirection('up'));
+    }
+    if (downBtn) {
+        downBtn.onclick = null;
+        downBtn.addEventListener('click', () => changeSnakeDirection('down'));
+    }
+    if (leftBtn) {
+        leftBtn.onclick = null;
+        leftBtn.addEventListener('click', () => changeSnakeDirection('left'));
+    }
+    if (rightBtn) {
+        rightBtn.onclick = null;
+        rightBtn.addEventListener('click', () => changeSnakeDirection('right'));
+    }
+    
+    // Ajouter l'écouteur clavier
+    document.addEventListener('keydown', handleSnakeKeyPress);
+    
+    // Démarrer le jeu
     const speed = 1000 / (gameRules.snake.vitesse * 10);
     snakeGame.gameLoop = setInterval(updateSnake, speed);
     
-    document.getElementById('up').addEventListener('click', () => changeSnakeDirection('up'));
-    document.getElementById('down').addEventListener('click', () => changeSnakeDirection('down'));
-    document.getElementById('left').addEventListener('click', () => changeSnakeDirection('left'));
-    document.getElementById('right').addEventListener('click', () => changeSnakeDirection('right'));
-    
-    document.addEventListener('keydown', handleSnakeKeyPress);
+    // Dessiner immédiatement
+    drawSnake();
 }
 
 function handleSnakeKeyPress(e) {
-    if (currentGameType !== 'snake') return;
+    if (currentGameType !== 'snake' || !snakeGame.gameLoop) return;
     
     switch(e.key) {
         case 'ArrowUp': changeSnakeDirection('up'); break;
@@ -1208,6 +1320,8 @@ function handleSnakeKeyPress(e) {
 }
 
 function changeSnakeDirection(newDirection) {
+    if (!snakeGame.gameLoop) return;
+    
     const opposites = {up: 'down', down: 'up', left: 'right', right: 'left'};
     if (newDirection !== opposites[snakeGame.direction]) {
         snakeGame.direction = newDirection;
@@ -1221,6 +1335,8 @@ function generateSnakeFood() {
 }
 
 function updateSnake() {
+    if (!snakeGame.gameLoop) return;
+    
     const head = {...snakeGame.snake[0]};
     
     switch(snakeGame.direction) {
@@ -1230,12 +1346,14 @@ function updateSnake() {
         case 'right': head.x++; break;
     }
     
+    // Vérifier les collisions avec les murs
     if (head.x < 0 || head.x >= snakeGame.canvas.width / snakeGame.gridSize ||
         head.y < 0 || head.y >= snakeGame.canvas.height / snakeGame.gridSize) {
         endSnakeGame();
         return;
     }
     
+    // Vérifier les collisions avec soi-même
     for (let segment of snakeGame.snake) {
         if (head.x === segment.x && head.y === segment.y) {
             endSnakeGame();
@@ -1245,15 +1363,21 @@ function updateSnake() {
     
     snakeGame.snake.unshift(head);
     
+    // Vérifier si la nourriture est mangée
     if (head.x === snakeGame.food.x && head.y === snakeGame.food.y) {
         snakeGame.score += 10;
         document.getElementById('snake-score').textContent = snakeGame.score;
         document.getElementById('snake-length').textContent = snakeGame.snake.length;
         generateSnakeFood();
         
+        // Vérifier la victoire
         if (snakeGame.score >= (gameRules.snake.scoreGoal || 50)) {
-            document.getElementById('resultat-snake').textContent = `🎉 ${gameRules.snake.victoire}`;
             clearInterval(snakeGame.gameLoop);
+            const rules = gameRules.snake;
+            document.getElementById('resultat-snake').innerHTML = `
+                <h3>🎉 Félicitations! ${rules.victoire}</h3>
+                <p class="punition">💥 Vous avez évité la punition!</p>
+            `;
             document.removeEventListener('keydown', handleSnakeKeyPress);
             return;
         }
@@ -1265,10 +1389,33 @@ function updateSnake() {
 }
 
 function drawSnake() {
+    if (!snakeGame.ctx) return;
+    
     const ctx = snakeGame.ctx;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    // Effacer le canvas
+    ctx.clearRect(0, 0, snakeGame.canvas.width, snakeGame.canvas.height);
+    
+    // Dessiner le fond
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
     ctx.fillRect(0, 0, snakeGame.canvas.width, snakeGame.canvas.height);
     
+    // Dessiner la grille
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < snakeGame.canvas.width; x += snakeGame.gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, snakeGame.canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0; y < snakeGame.canvas.height; y += snakeGame.gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(snakeGame.canvas.width, y);
+        ctx.stroke();
+    }
+    
+    // Dessiner le serpent
     ctx.fillStyle = '#4ecdc4';
     for (let segment of snakeGame.snake) {
         ctx.fillRect(
@@ -1279,18 +1426,41 @@ function drawSnake() {
         );
     }
     
+    // Dessiner la tête du serpent
+    if (snakeGame.snake.length > 0) {
+        const head = snakeGame.snake[0];
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(
+            head.x * snakeGame.gridSize,
+            head.y * snakeGame.gridSize,
+            snakeGame.gridSize - 2,
+            snakeGame.gridSize - 2
+        );
+    }
+    
+    // Dessiner la nourriture
     ctx.fillStyle = '#ff6b6b';
-    ctx.fillRect(
-        snakeGame.food.x * snakeGame.gridSize,
-        snakeGame.food.y * snakeGame.gridSize,
-        snakeGame.gridSize - 2,
-        snakeGame.gridSize - 2
+    ctx.beginPath();
+    ctx.arc(
+        snakeGame.food.x * snakeGame.gridSize + snakeGame.gridSize / 2,
+        snakeGame.food.y * snakeGame.gridSize + snakeGame.gridSize / 2,
+        snakeGame.gridSize / 2 - 2,
+        0,
+        Math.PI * 2
     );
+    ctx.fill();
 }
 
 function endSnakeGame() {
-    clearInterval(snakeGame.gameLoop);
-    document.getElementById('resultat-snake').textContent = `💥 ${gameRules.snake.defaite} - ${gameRules.snake.punition}`;
+    if (snakeGame.gameLoop) {
+        clearInterval(snakeGame.gameLoop);
+        snakeGame.gameLoop = null;
+    }
+    const rules = gameRules.snake;
+    document.getElementById('resultat-snake').innerHTML = `
+        <h3>💥 Game Over! ${rules.defaite}</h3>
+        <p class="punition">💥 Vous devez: ${rules.punition}</p>
+    `;
     document.removeEventListener('keydown', handleSnakeKeyPress);
 }
 
@@ -1342,6 +1512,11 @@ function initializeActionVerite() {
     document.getElementById('resultat-action').textContent = '';
     document.getElementById('card-content').textContent = 'Cliquez sur un bouton pour commencer!';
     
+    // Réactiver les boutons
+    document.getElementById('btn-action').disabled = false;
+    document.getElementById('btn-verite').disabled = false;
+    document.getElementById('btn-next-player').disabled = false;
+    
     document.getElementById('btn-action').addEventListener('click', showRandomAction);
     document.getElementById('btn-verite').addEventListener('click', showRandomVerite);
     document.getElementById('btn-next-player').addEventListener('click', nextPlayer);
@@ -1368,7 +1543,11 @@ function nextPlayer() {
         document.getElementById('tour-action').textContent = actionVerite.currentTour;
         
         if (actionVerite.currentTour > gameRules.action.manches) {
-            document.getElementById('resultat-action').textContent = `🎉 ${gameRules.action.victoire}`;
+            const rules = gameRules.action;
+            document.getElementById('resultat-action').innerHTML = `
+                <h3>🎉 ${rules.victoire}</h3>
+                <p class="punition">💥 Tous les joueurs ont évité la punition!</p>
+            `;
             document.getElementById('btn-action').disabled = true;
             document.getElementById('btn-verite').disabled = true;
             document.getElementById('btn-next-player').disabled = true;
@@ -1500,13 +1679,14 @@ function validateCalculAnswer() {
     
     if (userAnswer === correctAnswer) {
         calculMental.score++;
-        document.getElementById('calcul-score').textContent = calculMental.score;
         document.getElementById('resultat-calcul').textContent = "✅ Bonne réponse!";
         document.getElementById('resultat-calcul').style.color = '#4CAF50';
     } else {
         document.getElementById('resultat-calcul').textContent = `❌ Mauvaise réponse! La réponse était ${correctAnswer}`;
         document.getElementById('resultat-calcul').style.color = '#FF6B6B';
     }
+    
+    document.getElementById('calcul-score').textContent = calculMental.score;
     
     calculMental.count++;
     document.getElementById('calcul-count').textContent = calculMental.count;
@@ -1524,39 +1704,52 @@ function validateCalculAnswer() {
 function endCalculGame() {
     const rules = gameRules.calcul;
     let message = `Jeu terminé! Score: ${calculMental.score}/${rules.manches}`;
+    let punishmentText = '';
     
     if (calculMental.score >= Math.ceil(rules.manches * 0.8)) {
         message += ` 🎉 ${rules.victoire}`;
+        punishmentText = `<p class="punition">💥 Vous avez évité la punition!</p>`;
     } else {
-        message += ` 💥 ${rules.defaite} - ${rules.punition}`;
+        message += ` 💥 ${rules.defaite}`;
+        punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition}</p>`;
     }
     
-    document.getElementById('resultat-calcul').textContent = message;
+    document.getElementById('resultat-calcul').innerHTML = `<h3>${message}</h3>${punishmentText}`;
     document.getElementById('calcul-reponse').disabled = true;
     document.getElementById('btn-valider-calcul').disabled = true;
 }
 
 // =============================
-// JEU PONG
+// JEU PONG (CORRIGÉ)
 // =============================
 function initializePong() {
     const canvas = document.getElementById('pong-canvas');
     const ctx = canvas.getContext('2d');
     
+    // Arrêter le jeu précédent s'il existe
+    if (pongGame.gameLoop) {
+        clearInterval(pongGame.gameLoop);
+        document.removeEventListener('keydown', handlePongKeyDown);
+        document.removeEventListener('keyup', handlePongKeyUp);
+    }
+    
+    // Réinitialiser le jeu
     pongGame.canvas = canvas;
     pongGame.ctx = ctx;
     pongGame.ball = { 
         x: canvas.width / 2, 
         y: canvas.height / 2, 
-        dx: gameRules.pong.vitesse, 
-        dy: gameRules.pong.vitesse, 
+        dx: (Math.random() > 0.5 ? 1 : -1) * gameRules.pong.vitesse, 
+        dy: (Math.random() - 0.5) * gameRules.pong.vitesse, 
         radius: 10 
     };
     pongGame.playerPaddle = { x: 50, y: canvas.height / 2 - 25, width: 10, height: 50 };
     pongGame.computerPaddle = { x: canvas.width - 60, y: canvas.height / 2 - 25, width: 10, height: 50 };
     pongGame.playerScore = 0;
     pongGame.computerScore = 0;
+    pongGame.keys = {};
     currentRound = 1;
+    pongGame.isInitialized = true;
     
     document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
     document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
@@ -1564,67 +1757,95 @@ function initializePong() {
     document.getElementById('pong-manches').textContent = gameRules.pong.manches;
     document.getElementById('resultat-pong').textContent = '';
     
-    document.addEventListener('keydown', handlePongKeyPress);
+    // Ajouter les écouteurs de clavier
+    document.addEventListener('keydown', handlePongKeyDown);
+    document.addEventListener('keyup', handlePongKeyUp);
     
-    if (pongGame.gameLoop) clearInterval(pongGame.gameLoop);
+    // Démarrer le jeu
     pongGame.gameLoop = setInterval(updatePong, 1000 / 60);
     
     drawPong();
 }
 
-function handlePongKeyPress(e) {
+function handlePongKeyDown(e) {
     if (currentGameType !== 'pong') return;
-    
-    const paddleSpeed = 10;
-    switch(e.key) {
-        case 'ArrowUp':
-            pongGame.playerPaddle.y = Math.max(0, pongGame.playerPaddle.y - paddleSpeed);
-            break;
-        case 'ArrowDown':
-            pongGame.playerPaddle.y = Math.min(
-                pongGame.canvas.height - pongGame.playerPaddle.height,
-                pongGame.playerPaddle.y + paddleSpeed
-            );
-            break;
-    }
+    pongGame.keys[e.key] = true;
+}
+
+function handlePongKeyUp(e) {
+    if (currentGameType !== 'pong') return;
+    pongGame.keys[e.key] = false;
 }
 
 function updatePong() {
-    const ball = pongGame.ball;
-    const player = pongGame.playerPaddle;
-    const computer = pongGame.computerPaddle;
-    
-    ball.x += ball.dx;
-    ball.y += ball.dy;
-    
-    if (ball.y - ball.radius < 0 || ball.y + ball.radius > pongGame.canvas.height) {
-        ball.dy = -ball.dy;
+    // Gestion des touches pour le joueur
+    const paddleSpeed = 8;
+    if (pongGame.keys['ArrowUp']) {
+        pongGame.playerPaddle.y = Math.max(0, pongGame.playerPaddle.y - paddleSpeed);
+    }
+    if (pongGame.keys['ArrowDown']) {
+        pongGame.playerPaddle.y = Math.min(
+            pongGame.canvas.height - pongGame.playerPaddle.height,
+            pongGame.playerPaddle.y + paddleSpeed
+        );
     }
     
-    computer.y += (ball.y - (computer.y + computer.height / 2)) * 0.1;
-    computer.y = Math.max(0, Math.min(pongGame.canvas.height - computer.height, computer.y));
+    // Déplacer la balle
+    pongGame.ball.x += pongGame.ball.dx;
+    pongGame.ball.y += pongGame.ball.dy;
     
-    if (ball.x - ball.radius < player.x + player.width && 
-        ball.y > player.y && ball.y < player.y + player.height) {
-        ball.dx = Math.abs(ball.dx);
+    // Rebond sur les murs haut/bas
+    if (pongGame.ball.y - pongGame.ball.radius < 0 || pongGame.ball.y + pongGame.ball.radius > pongGame.canvas.height) {
+        pongGame.ball.dy = -pongGame.ball.dy;
     }
     
-    if (ball.x + ball.radius > computer.x && 
-        ball.y > computer.y && ball.y < computer.y + computer.height) {
-        ball.dx = -Math.abs(ball.dx);
+    // IA de l'ordinateur
+    const computerPaddleCenter = pongGame.computerPaddle.y + pongGame.computerPaddle.height / 2;
+    if (computerPaddleCenter < pongGame.ball.y - 10) {
+        pongGame.computerPaddle.y = Math.min(
+            pongGame.canvas.height - pongGame.computerPaddle.height,
+            pongGame.computerPaddle.y + 6
+        );
+    } else if (computerPaddleCenter > pongGame.ball.y + 10) {
+        pongGame.computerPaddle.y = Math.max(0, pongGame.computerPaddle.y - 6);
     }
     
-    if (ball.x - ball.radius < 0) {
+    // Collision avec les raquettes
+    // Joueur
+    if (pongGame.ball.x - pongGame.ball.radius < pongGame.playerPaddle.x + pongGame.playerPaddle.width &&
+        pongGame.ball.x + pongGame.ball.radius > pongGame.playerPaddle.x &&
+        pongGame.ball.y > pongGame.playerPaddle.y &&
+        pongGame.ball.y < pongGame.playerPaddle.y + pongGame.playerPaddle.height) {
+        
+        // Calculer l'angle de rebond
+        const hitPosition = (pongGame.ball.y - (pongGame.playerPaddle.y + pongGame.playerPaddle.height / 2)) / (pongGame.playerPaddle.height / 2);
+        pongGame.ball.dx = Math.abs(pongGame.ball.dx);
+        pongGame.ball.dy = hitPosition * 7;
+    }
+    
+    // Ordinateur
+    if (pongGame.ball.x + pongGame.ball.radius > pongGame.computerPaddle.x &&
+        pongGame.ball.x - pongGame.ball.radius < pongGame.computerPaddle.x + pongGame.computerPaddle.width &&
+        pongGame.ball.y > pongGame.computerPaddle.y &&
+        pongGame.ball.y < pongGame.computerPaddle.y + pongGame.computerPaddle.height) {
+        
+        const hitPosition = (pongGame.ball.y - (pongGame.computerPaddle.y + pongGame.computerPaddle.height / 2)) / (pongGame.computerPaddle.height / 2);
+        pongGame.ball.dx = -Math.abs(pongGame.ball.dx);
+        pongGame.ball.dy = hitPosition * 7;
+    }
+    
+    // Marquer un point
+    if (pongGame.ball.x - pongGame.ball.radius < 0) {
         pongGame.computerScore++;
+        document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
         resetPongBall();
-    } else if (ball.x + ball.radius > pongGame.canvas.width) {
+    } else if (pongGame.ball.x + pongGame.ball.radius > pongGame.canvas.width) {
         pongGame.playerScore++;
+        document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
         resetPongBall();
     }
     
-    document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
-    document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
-    
+    // Vérifier la fin de manche
     const pointsToWin = gameRules.pong.pointsToWin || 5;
     if (pongGame.playerScore >= pointsToWin || pongGame.computerScore >= pointsToWin) {
         endPongRound();
@@ -1636,19 +1857,20 @@ function updatePong() {
 function resetPongBall() {
     pongGame.ball.x = pongGame.canvas.width / 2;
     pongGame.ball.y = pongGame.canvas.height / 2;
-    pongGame.ball.dx = -pongGame.ball.dx;
-    pongGame.ball.dy = (Math.random() - 0.5) * 10;
+    pongGame.ball.dx = (Math.random() > 0.5 ? 1 : -1) * gameRules.pong.vitesse;
+    pongGame.ball.dy = (Math.random() - 0.5) * gameRules.pong.vitesse;
 }
 
 function drawPong() {
     const ctx = pongGame.ctx;
-    const ball = pongGame.ball;
-    const player = pongGame.playerPaddle;
-    const computer = pongGame.computerPaddle;
+    // Effacer le canvas
+    ctx.clearRect(0, 0, pongGame.canvas.width, pongGame.canvas.height);
     
+    // Dessiner le fond
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.fillRect(0, 0, pongGame.canvas.width, pongGame.canvas.height);
     
+    // Ligne centrale
     ctx.setLineDash([5, 15]);
     ctx.beginPath();
     ctx.moveTo(pongGame.canvas.width / 2, 0);
@@ -1657,36 +1879,62 @@ function drawPong() {
     ctx.stroke();
     ctx.setLineDash([]);
     
+    // Dessiner la balle
     ctx.fillStyle = '#4ecdc4';
     ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.arc(pongGame.ball.x, pongGame.ball.y, pongGame.ball.radius, 0, Math.PI * 2);
     ctx.fill();
     
+    // Dessiner les raquettes
     ctx.fillStyle = '#ff6b6b';
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-    ctx.fillRect(computer.x, computer.y, computer.width, computer.height);
+    ctx.fillRect(pongGame.playerPaddle.x, pongGame.playerPaddle.y, 
+                 pongGame.playerPaddle.width, pongGame.playerPaddle.height);
+    
+    ctx.fillStyle = '#4ecdc4';
+    ctx.fillRect(pongGame.computerPaddle.x, pongGame.computerPaddle.y, 
+                 pongGame.computerPaddle.width, pongGame.computerPaddle.height);
 }
 
 function endPongRound() {
+    clearInterval(pongGame.gameLoop);
+    pongGame.gameLoop = null;
+    
     currentRound++;
     document.getElementById('pong-manche').textContent = currentRound;
     
     if (currentRound > gameRules.pong.manches) {
-        clearInterval(pongGame.gameLoop);
+        // Fin du match
+        document.removeEventListener('keydown', handlePongKeyDown);
+        document.removeEventListener('keyup', handlePongKeyUp);
+        
         let message = "Match terminé! ";
+        const rules = gameRules.pong;
+        
         if (pongGame.playerScore > pongGame.computerScore) {
-            message += `🎉 ${gameRules.pong.victoire}`;
+            message += `🎉 ${rules.victoire}`;
+            document.getElementById('resultat-pong').innerHTML = `
+                <h3>${message}</h3>
+                <p class="punition">💥 L'ordinateur doit: ${rules.punition}</p>
+            `;
         } else {
-            message += `💥 ${gameRules.pong.defaite} - ${gameRules.pong.punition}`;
+            message += `💥 ${rules.defaite}`;
+            document.getElementById('resultat-pong').innerHTML = `
+                <h3>${message}</h3>
+                <p class="punition">💥 Vous devez: ${rules.punition}</p>
+            `;
         }
-        document.getElementById('resultat-pong').textContent = message;
-        document.removeEventListener('keydown', handlePongKeyPress);
     } else {
+        // Nouvelle manche
         pongGame.playerScore = 0;
         pongGame.computerScore = 0;
         document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
         document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
         resetPongBall();
+        
+        // Redémarrer le jeu après un délai
+        setTimeout(() => {
+            pongGame.gameLoop = setInterval(updatePong, 1000 / 60);
+        }, 1000);
     }
 }
 

@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameForge - Créateur de Jeux Personnalisés</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Variables CSS */
+        :root {
+            --primary: #6c5ce7;
+            --primary-dark: #5b4fcf;
+            --secondary: #00cec9;
+            --accent: #fd79a8;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --danger: #e17055;
+            --dark: #2d3436;
+            --light: #ffffff;
+            --gray-light: #f5f6fa;
+            --gray: #dfe6e9;
+            --gray-dark: #636e72;
+            
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            --light: #2d3436;
+            --dark: #f5f6fa;
+            --gray-light: #34495e;
+            --gray: #2c3e50;
+            --gray-dark: #bdc3c7;
+        }
+
+        /* Reset et base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gray-light);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: var(--transition);
+        }
+
+        /* Conteneur principal */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path fill="white" opacity="0.05" d="M0,0 L100,0 L100,100 Z"/></svg>');
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .logo i {
+            font-size: 3.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .logo h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: var(--light);
+            border: none;
+            border-radius: 50px;
+            color: var(--dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Sections */
+        .page {
+            display: none;
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--gray);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Grille des jeux */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 2rem;
+        }
+
+        .game-card {
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 25px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .game-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .game-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .game-desc {
+            color: var(--gray-dark);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Boutons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+            color: var(--dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-dark);
+            color: var(--light);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+
+        /* Formulaires */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--light);
+            color: var(--dark);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.1);
+        }
+
+        /* Zone de jeu */
+        .game-container {
+            background: var(--gray-light);
+            border-radius: var(--radius);
+            padding: 25px;
+            margin: 2rem 0;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .jeu-type {
+            display: none;
+        }
+
+        .jeu-type.active {
+            display: block;
+            width: 100%;
+        }
+
+        /* Tic Tac Toe */
+        #xo-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            margin: 20px auto;
+        }
+
+        .cell {
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .cell:hover {
+            background: var(--gray-light);
+        }
+
+        .cell.x {
+            color: var(--danger);
+        }
+
+        .cell.o {
+            color: var(--primary);
+        }
+
+        /* Pierre-Papier-Ciseaux */
+        .choices {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 2rem 0;
+        }
+
+        .choice {
+            width: 100px;
+            height: 100px;
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: var(--transition);
+            background: white;
+        }
+
+        .choice:hover {
+            transform: scale(1.1);
+            background: var(--gray-light);
+        }
+
+        /* Mots Mêlés */
+        #mots-grid {
+            display: grid;
+            gap: 2px;
+            background: var(--gray);
+            padding: 5px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .word-cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .word-cell.selected {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Jeu du Serpent */
+        #snake-canvas {
+            border: 3px solid var(--primary);
+            border-radius: 8px;
+            background: #222;
+            display: block;
+            margin: 20px auto;
+        }
+
+        /* Action ou Vérité */
+        .truth-dare-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin: 2rem 0;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        /* Calcul Mental */
+        .math-problem {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 2rem 0;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        /* Ping Pong */
+        #pong-canvas {
+            border: 3px solid var(--primary);
+            border-radius: 8px;
+            background: #222;
+            display: block;
+            margin: 20px auto;
+        }
+
+        /* Thème toggle */
+        .theme-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .theme-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            font-size: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-btn:hover {
+            transform: rotate(30deg) scale(1.1);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            header {
+                padding: 2rem 1rem;
+            }
+
+            .logo h1 {
+                font-size: 2rem;
+            }
+
+            .logo i {
+                font-size: 2.5rem;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .tab-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .theme-toggle {
+                bottom: 20px;
+                right: 20px;
+            }
+
+            .theme-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+
+            #xo-board {
+                grid-template-columns: repeat(3, 80px);
+                grid-template-rows: repeat(3, 80px);
+            }
+
+            .choices {
+                flex-wrap: wrap;
+            }
+
+            .choice {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
+        }
+
+        /* Statistiques */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--light);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--gray-dark);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <i class="fas fa-gamepad"></i>
+                <h1>GameForge</h1>
+            </div>
+            <p class="tagline">Créez, personnalisez et jouez à vos propres jeux - sans programmer !</p>
+        </header>
+
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <button class="tab-btn active" data-page="accueil">
+                <i class="fas fa-home"></i>
+                <span>Accueil</span>
+            </button>
+            <button class="tab-btn" data-page="choix">
+                <i class="fas fa-gamepad"></i>
+                <span>Jeux</span>
+            </button>
+            <button class="tab-btn" data-page="personnalisation">
+                <i class="fas fa-cogs"></i>
+                <span>Personnaliser</span>
+            </button>
+            <button class="tab-btn" data-page="jeu">
+                <i class="fas fa-play"></i>
+                <span>Jouer</span>
+            </button>
+        </div>
+
+        <!-- Page Accueil -->
+        <div id="accueil" class="page active">
+            <div class="page-header">
+                <h2 class="page-title">
+                    <i class="fas fa-home"></i>
+                    Bienvenue sur GameForge
+                </h2>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="games-count">0</div>
+                    <div class="stat-label">Jeux créés</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="players-count">0</div>
+                    <div class="stat-label">Joueurs actifs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="games-played">0</div>
+                    <div class="stat-label">Parties jouées</div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 3rem 0;">
+                <h3 style="color: var(--primary); margin-bottom: 1rem;">Commencez votre aventure</h3>
+                <p style="color: var(--gray-dark); margin-bottom: 2rem;">
+                    Créez vos propres jeux personnalisés en quelques clics.<br>
+                    Personnalisez les règles, les conditions de victoire et les pénalités.
+                </p>
+                <button class="btn btn-primary" id="btn-start">
+                    <i class="fas fa-rocket"></i>
+                    Commencer maintenant
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Choix du jeu -->
+        <div id="choix" class="page">
+            <div class="page-header">
+                <h2 class="page-title">
+                    <i class="fas fa-gamepad"></i>
+                    Choisissez votre jeu
+                </h2>
+                <button class="btn btn-secondary" id="btn-retour-choix">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour
+                </button>
+            </div>
+            
+            <div class="games-grid" id="games-container">
+                <!-- Les cartes de jeu seront générées dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Page Personnalisation -->
+        <div id="personnalisation" class="page">
+            <div class="page-header">
+                <h2 class="page-title" id="current-game-title">
+                    <i class="fas fa-cogs"></i>
+                    Personnalisation du jeu
+                </h2>
+                <button class="btn btn-secondary" id="btn-retour-perso">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Mode de jeu</label>
+                <select id="game-mode" class="form-control">
+                    <option value="computer">Contre l'ordinateur</option>
+                    <option value="friends">À plusieurs</option>
+                    <option value="solo">Solo</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-book"></i> Règles du jeu</label>
+                <textarea id="regles" class="form-control" rows="3" placeholder="Décrivez les règles de votre jeu..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-trophy"></i> Conditions de victoire</label>
+                <textarea id="victoire" class="form-control" rows="2" placeholder="Comment gagner la partie?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-times-circle"></i> Conditions de défaite</label>
+                <textarea id="defaite" class="form-control" rows="2" placeholder="Comment perdre la partie?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-history"></i> Nombre de manches</label>
+                <input type="number" id="manches" class="form-control" min="1" max="20" value="3">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-exclamation-triangle"></i> Pénalité pour le perdant</label>
+                <textarea id="punition" class="form-control" rows="2" placeholder="Quelle pénalité pour le perdant?"></textarea>
+            </div>
+
+            <!-- Champs spécifiques au jeu -->
+            <div id="jeu-specific-fields"></div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn btn-primary" id="btn-generer">
+                    <i class="fas fa-magic"></i>
+                    Générer le jeu
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Jeu -->
+        <div id="jeu" class="page">
+            <div class="page-header">
+                <h2 class="page-title" id="titre-jeu">
+                    <i class="fas fa-play"></i>
+                    Votre jeu personnalisé
+                </h2>
+                <button class="btn btn-secondary" id="btn-retour-jeu">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour
+                </button>
+            </div>
+
+            <div class="game-info" style="margin-bottom: 1rem; text-align: center;">
+                <p id="mode-info"></p>
+            </div>
+
+            <div class="game-container">
+                <!-- Tic Tac Toe -->
+                <div id="jeu-xo" class="jeu-type">
+                    <div class="game-stats" style="text-align: center; margin-bottom: 1rem;">
+                        <p>Joueur actuel: <span id="joueur-actuel">X</span></p>
+                        <p>Manche: <span id="manche-actuelle">1</span>/<span id="manches-total">3</span></p>
+                    </div>
+                    <div id="xo-board"></div>
+                </div>
+
+                <!-- Pierre-Papier-Ciseaux -->
+                <div id="jeu-pfc" class="jeu-type">
+                    <div class="game-stats" style="text-align: center; margin-bottom: 2rem;">
+                        <p>Score: <span id="score-joueur">0</span> - <span id="score-adversaire">0</span></p>
+                        <p>Manche: <span id="manche-actuelle-pfc">1</span>/<span id="manches-total-pfc">3</span></p>
+                    </div>
+                    <div class="choices">
+                        <div class="choice" data-choice="pierre">
+                            <i class="fas fa-hand-rock"></i>
+                        </div>
+                        <div class="choice" data-choice="papier">
+                            <i class="fas fa-hand-paper"></i>
+                        </div>
+                        <div class="choice" data-choice="ciseaux">
+                            <i class="fas fa-hand-scissors"></i>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 2rem;">
+                        <p id="resultat-pfc"></p>
+                    </div>
+                </div>
+
+                <!-- Mots Mêlés -->
+                <div id="jeu-mots" class="jeu-type">
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <p>Mots trouvés: <span id="mots-trouves">0</span>/<span id="mots-total">5</span></p>
+                    </div>
+                    <div id="mots-grid"></div>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <p id="resultat-mots"></p>
+                    </div>
+                </div>
+
+                <!-- Jeu du Serpent -->
+                <div id="jeu-snake" class="jeu-type">
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <p>Score: <span id="snake-score">0</span> | Longueur: <span id="snake-length">1</span></p>
+                    </div>
+                    <canvas id="snake-canvas" width="400" height="400"></canvas>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <p id="resultat-snake"></p>
+                        <div style="display: flex; justify-content: center; gap: 10px; margin-top: 1rem;">
+                            <button class="btn btn-small" id="up">↑</button>
+                            <div>
+                                <button class="btn btn-small" id="left">←</button>
+                                <button class="btn btn-small" id="right">→</button>
+                            </div>
+                            <button class="btn btn-small" id="down">↓</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action ou Vérité -->
+                <div id="jeu-action" class="jeu-type">
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <p>Tour: <span id="tour-action">1</span>/<span id="tours-total">10</span></p>
+                        <p>Joueur actuel: <span id="current-player">Joueur 1</span></p>
+                    </div>
+                    <div class="truth-dare-card">
+                        <div id="card-content">
+                            <p>Choisissez Action ou Vérité!</p>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 2rem;">
+                        <button class="btn btn-primary" id="btn-action">Action</button>
+                        <button class="btn btn-secondary" id="btn-verite">Vérité</button>
+                        <button class="btn btn-success" id="btn-next-player">Suivant</button>
+                    </div>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <p id="resultat-action"></p>
+                    </div>
+                </div>
+
+                <!-- Calcul Mental -->
+                <div id="jeu-calcul" class="jeu-type">
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <p>Score: <span id="calcul-score">0</span> | Question: <span id="calcul-count">1</span>/<span id="calcul-total">10</span></p>
+                        <div style="width: 100%; background: var(--gray); border-radius: 10px; margin: 1rem 0;">
+                            <div id="timer-progress" style="height: 10px; background: var(--primary); border-radius: 10px; width: 100%; transition: width 1s linear;"></div>
+                        </div>
+                        <p>Temps restant: <span id="calcul-timer">10</span>s</p>
+                    </div>
+                    <div class="math-problem" id="calcul-question"></div>
+                    <div style="text-align: center; margin-top: 2rem;">
+                        <input type="number" id="calcul-reponse" class="form-control" style="width: 200px; margin: 0 auto 1rem;" placeholder="Votre réponse">
+                        <button class="btn btn-primary" id="btn-valider-calcul">Valider</button>
+                    </div>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <p id="resultat-calcul"></p>
+                    </div>
+                </div>
+
+                <!-- Ping Pong -->
+                <div id="jeu-pong" class="jeu-type">
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <p>Score: <span id="pong-score-joueur">0</span> - <span id="pong-score-adversaire">0</span></p>
+                        <p>Manche: <span id="pong-manche">1</span>/<span id="pong-manches">3</span></p>
+                    </div>
+                    <canvas id="pong-canvas" width="600" height="400"></canvas>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <p id="resultat-pong"></p>
+                        <p style="color: var(--gray-dark);">Utilisez les flèches ↑↓ pour déplacer votre raquette</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn btn-primary" id="btn-rejouer">
+                    <i class="fas fa-redo"></i>
+                    Rejouer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bouton thème -->
+    <div class="theme-toggle">
+        <button class="theme-btn" id="theme-toggle-btn">
+            <i class="fas fa-moon"></i>
+        </button>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION GLOBALE ====================
+        const gameForge = {
+            // Variables d'état
+            currentGameType: '',
+            currentGameMode: 'computer',
+            gameActive: true,
+            
+            // Données des jeux
+            games: [
+                {
+                    id: 'xo',
+                    name: 'Tic Tac Toe',
+                    icon: 'fas fa-times',
+                    description: 'Le classique jeu du morpion',
+                    color: '#6c5ce7'
+                },
+                {
+                    id: 'pfc',
+                    name: 'Pierre-Papier-Ciseaux',
+                    icon: 'fas fa-hand-rock',
+                    description: 'Le jeu traditionnel de mains',
+                    color: '#00cec9'
+                },
+                {
+                    id: 'mots',
+                    name: 'Mots Mêlés',
+                    icon: 'fas fa-font',
+                    description: 'Trouvez des mots cachés',
+                    color: '#fd79a8'
+                },
+                {
+                    id: 'snake',
+                    name: 'Jeu du Serpent',
+                    icon: 'fas fa-snake',
+                    description: 'Guidez le serpent pour manger',
+                    color: '#00b894'
+                },
+                {
+                    id: 'action',
+                    name: 'Action ou Vérité',
+                    icon: 'fas fa-question-circle',
+                    description: 'Le jeu classique de vérité ou action',
+                    color: '#e17055'
+                },
+                {
+                    id: 'calcul',
+                    name: 'Calcul Mental',
+                    icon: 'fas fa-calculator',
+                    description: 'Testez vos compétences en calcul',
+                    color: '#a29bfe'
+                },
+                {
+                    id: 'pong',
+                    name: 'Ping Pong',
+                    icon: 'fas fa-table-tennis',
+                    description: 'Le classique jeu de raquettes',
+                    color: '#fdcb6e'
+                }
+            ],
+            
+            // Règles par défaut
+            defaultRules: {
+                xo: {
+                    regles: "Placez tour à tour vos symboles (X et O) sur la grille 3x3. Le premier à aligner 3 symboles gagne.",
+                    victoire: "Alignez 3 symboles identiques horizontalement, verticalement ou en diagonale",
+                    defaite: "Votre adversaire aligne 3 symboles avant vous ou la grille est remplie sans gagnant",
+                    manches: 3,
+                    punition: "Faire 5 pompes"
+                },
+                pfc: {
+                    regles: "Choisissez entre pierre, papier ou ciseaux. La pierre bat les ciseaux, les ciseaux battent le papier, le papier bat la pierre.",
+                    victoire: "Gagner le plus de manches sur le nombre total défini",
+                    defaite: "Perdre plus de manches que votre adversaire",
+                    manches: 3,
+                    punition: "Chanter une chanson"
+                },
+                mots: {
+                    regles: "Trouvez tous les mots cachés dans la grille. Les mots peuvent être placés horizontalement ou verticalement.",
+                    victoire: "Trouver tous les mots dans la grille",
+                    defaite: "Ne pas trouver tous les mots dans le temps imparti",
+                    manches: 1,
+                    punition: "Écrire 10 fois chaque mot non trouvé",
+                    motsList: "CHAT,CHIEN,MAISON,VOITURE,ARBRE",
+                    gridSize: 10
+                },
+                snake: {
+                    regles: "Contrôlez le serpent avec les flèches directionnelles. Mangez la nourriture pour grandir. Évitez de vous mordre la queue.",
+                    victoire: "Atteindre un score de 50 points",
+                    defaite: "Le serpent se mord la queue ou touche un mur",
+                    manches: 1,
+                    punition: "Faire 20 sauts",
+                    vitesse: 5
+                },
+                action: {
+                    regles: "Choisissez entre Action ou Vérité à chaque tour. Les Actions sont des défis, les Vérités sont des questions.",
+                    victoire: "Terminer tous les tours sans abandonner",
+                    defaite: "Abandonner un défi ou refuser de répondre",
+                    manches: 10,
+                    punition: "Faire le prochain défi de l'adversaire",
+                    actions: "Fais 10 pompes,Chante une chanson,Danse 30 secondes",
+                    verites: "Quel est ton plus grand secret?,Quelle est ta plus grande peur?"
+                },
+                calcul: {
+                    regles: "Résolvez les opérations mathématiques le plus rapidement possible.",
+                    victoire: "Obtenir un score de 8/10 ou plus",
+                    defaite: "Obtenir un score inférieur à 8/10",
+                    manches: 10,
+                    punition: "Résoudre 10 opérations supplémentaires",
+                    niveau: "facile"
+                },
+                pong: {
+                    regles: "Utilisez les flèches haut/bas pour déplacer votre raquette. Renvoyez la balle et marquez des points.",
+                    victoire: "Gagner 3 manches avant l'ordinateur",
+                    defaite: "Perdre 3 manches contre l'ordinateur",
+                    manches: 3,
+                    punition: "Faire 10 flexions",
+                    vitesse: 5
+                }
+            },
+            
+            // État des jeux
+            gameState: {
+                xo: {
+                    board: [],
+                    currentPlayer: 'X',
+                    scores: { player: 0, computer: 0 },
+                    round: 1
+                },
+                pfc: {
+                    scores: { player: 0, computer: 0 },
+                    round: 1
+                },
+                mots: {
+                    grid: [],
+                    words: [],
+                    foundWords: [],
+                    selectedCells: []
+                },
+                snake: {
+                    snake: [{x: 10, y: 10}],
+                    direction: 'right',
+                    food: {x: 15, y: 15},
+                    score: 0,
+                    gameLoop: null
+                },
+                action: {
+                    actions: [],
+                    verites: [],
+                    currentTour: 1,
+                    currentPlayerIndex: 0,
+                    players: ["Joueur 1", "Joueur 2"]
+                },
+                calcul: {
+                    currentQuestion: {},
+                    score: 0,
+                    count: 0,
+                    timer: null,
+                    timeLeft: 10
+                },
+                pong: {
+                    ball: { x: 300, y: 200, dx: 5, dy: 5 },
+                    playerPaddle: { y: 175 },
+                    computerPaddle: { y: 175 },
+                    scores: { player: 0, computer: 0 },
+                    round: 1,
+                    gameLoop: null
+                }
+            },
+            
+            // Initialisation
+            init() {
+                this.loadTheme();
+                this.renderGames();
+                this.setupEventListeners();
+                this.updateStats();
+                this.showNotification('GameForge prêt!', 'success');
+            },
+            
+            // Rendu des jeux
+            renderGames() {
+                const container = document.getElementById('games-container');
+                container.innerHTML = '';
+                
+                this.games.forEach(game => {
+                    const card = document.createElement('div');
+                    card.className = 'game-card';
+                    card.dataset.gameId = game.id;
+                    
+                    card.innerHTML = `
+                        <i class="${game.icon} game-icon"></i>
+                        <h3 class="game-title">${game.name}</h3>
+                        <p class="game-desc">${game.description}</p>
+                        <div class="game-actions">
+                            <button class="btn btn-primary btn-small play-classic">
+                                <i class="fas fa-play"></i> Classique
+                            </button>
+                            <button class="btn btn-secondary btn-small play-custom">
+                                <i class="fas fa-cog"></i> Personnaliser
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Ajouter les écouteurs d'événements
+                    card.querySelector('.play-classic').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.playGame(game.id, 'classic');
+                    });
+                    
+                    card.querySelector('.play-custom').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.playGame(game.id, 'custom');
+                    });
+                    
+                    container.appendChild(card);
+                });
+            },
+            
+            // Navigation
+            showPage(pageId) {
+                document.querySelectorAll('.page').forEach(page => {
+                    page.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                document.getElementById(pageId).classList.add('active');
+                document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+            },
+            
+            // Jouer un jeu
+            playGame(gameId, mode) {
+                this.currentGameType = gameId;
+                this.currentGameMode = document.getElementById('game-mode').value;
+                
+                if (mode === 'classic') {
+                    this.loadDefaultGame(gameId);
+                    this.showPage('jeu');
+                    this.initializeGame(gameId);
+                } else {
+                    this.showPage('personnalisation');
+                    this.prefillCustomizationFields(gameId);
+                }
+            },
+            
+            // Charger un jeu par défaut
+            loadDefaultGame(gameId) {
+                const rules = this.defaultRules[gameId];
+                if (!rules) return;
+                
+                // Remplir les champs avec les règles par défaut
+                document.getElementById('regles').value = rules.regles;
+                document.getElementById('victoire').value = rules.victoire;
+                document.getElementById('defaite').value = rules.defaite;
+                document.getElementById('manches').value = rules.manches;
+                document.getElementById('punition').value = rules.punition;
+                
+                // Mettre à jour le titre
+                const game = this.games.find(g => g.id === gameId);
+                document.getElementById('current-game-title').innerHTML = 
+                    `<i class="fas fa-cogs"></i> Personnalisation du jeu : ${game.name}`;
+                
+                // Ajouter les champs spécifiques
+                this.addSpecificFields(gameId, rules);
+            },
+            
+            // Pré-remplir les champs de personnalisation
+            prefillCustomizationFields(gameId) {
+                const rules = this.defaultRules[gameId];
+                if (!rules) return;
+                
+                document.getElementById('regles').value = rules.regles || '';
+                document.getElementById('victoire').value = rules.victoire || '';
+                document.getElementById('defaite').value = rules.defaite || '';
+                document.getElementById('manches').value = rules.manches || 1;
+                document.getElementById('punition').value = rules.punition || '';
+                
+                // Mettre à jour le titre
+                const game = this.games.find(g => g.id === gameId);
+                document.getElementById('current-game-title').innerHTML = 
+                    `<i class="fas fa-cogs"></i> Personnalisation du jeu : ${game.name}`;
+                
+                // Ajouter les champs spécifiques
+                this.addSpecificFields(gameId, rules);
+            },
+            
+            // Ajouter des champs spécifiques au jeu
+            addSpecificFields(gameId, rules) {
+                const container = document.getElementById('jeu-specific-fields');
+                container.innerHTML = '';
+                
+                switch(gameId) {
+                    case 'mots':
+                        container.innerHTML = `
+                            <div class="form-group">
+                                <label class="form-label">Mots à trouver (séparés par des virgules)</label>
+                                <input type="text" id="mots-list" class="form-control" value="${rules.motsList || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Taille de la grille</label>
+                                <select id="grid-size-mots" class="form-control">
+                                    <option value="8">8x8</option>
+                                    <option value="10" selected>10x10</option>
+                                    <option value="12">12x12</option>
+                                </select>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'snake':
+                        container.innerHTML = `
+                            <div class="form-group">
+                                <label class="form-label">Vitesse du serpent</label>
+                                <select id="snake-speed" class="form-control">
+                                    <option value="3">Lent</option>
+                                    <option value="5" selected>Normal</option>
+                                    <option value="8">Rapide</option>
+                                </select>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'action':
+                        container.innerHTML = `
+                            <div class="form-group">
+                                <label class="form-label">Actions (séparées par des virgules)</label>
+                                <textarea id="actions-list" class="form-control" rows="3">${rules.actions || ''}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Vérités (séparées par des virgules)</label>
+                                <textarea id="verites-list" class="form-control" rows="3">${rules.verites || ''}</textarea>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'calcul':
+                        container.innerHTML = `
+                            <div class="form-group">
+                                <label class="form-label">Niveau de difficulté</label>
+                                <select id="calcul-level" class="form-control">
+                                    <option value="facile" selected>Facile (additions)</option>
+                                    <option value="moyen">Moyen (soustractions)</option>
+                                    <option value="difficile">Difficile (multiplications)</option>
+                                </select>
+                            </div>
+                        `;
+                        break;
+                }
+            },
+            
+            // Générer le jeu avec les règles personnalisées
+            generateGame() {
+                const gameId = this.currentGameType;
+                if (!gameId) {
+                    this.showNotification('Sélectionnez un jeu d\'abord', 'error');
+                    return;
+                }
+                
+                // Récupérer les règles
+                const rules = {
+                    regles: document.getElementById('regles').value,
+                    victoire: document.getElementById('victoire').value,
+                    defaite: document.getElementById('defaite').value,
+                    manches: parseInt(document.getElementById('manches').value) || 1,
+                    punition: document.getElementById('punition').value
+                };
+                
+                // Valider les règles
+                if (!rules.regles || !rules.victoire || !rules.defaite) {
+                    this.showNotification('Veuillez remplir au moins les règles, victoire et défaite', 'error');
+                    return;
+                }
+                
+                // Sauvegarder les règles spécifiques
+                switch(gameId) {
+                    case 'mots':
+                        rules.motsList = document.getElementById('mots-list')?.value || '';
+                        rules.gridSize = parseInt(document.getElementById('grid-size-mots')?.value) || 10;
+                        break;
+                    case 'action':
+                        rules.actions = document.getElementById('actions-list')?.value || '';
+                        rules.verites = document.getElementById('verites-list')?.value || '';
+                        break;
+                    case 'calcul':
+                        rules.niveau = document.getElementById('calcul-level')?.value || 'facile';
+                        break;
+                }
+                
+                // Mettre à jour l'interface
+                const game = this.games.find(g => g.id === gameId);
+                document.getElementById('titre-jeu').textContent = game.name + ' Personnalisé';
+                document.getElementById('mode-info').textContent = 
+                    `Mode: ${this.currentGameMode === 'computer' ? 'Contre l\'ordinateur' : 'À plusieurs'}`;
+                
+                // Afficher la page du jeu
+                this.showPage('jeu');
+                
+                // Masquer tous les jeux et afficher seulement celui sélectionné
+                document.querySelectorAll('.jeu-type').forEach(jeu => {
+                    jeu.style.display = 'none';
+                });
+                document.getElementById(`jeu-${gameId}`).style.display = 'block';
+                
+                // Initialiser le jeu
+                this.initializeGame(gameId, rules);
+                
+                this.showNotification('Jeu généré avec succès!', 'success');
+            },
+            
+            // Initialiser un jeu
+            initializeGame(gameId, customRules = null) {
+                const rules = customRules || this.defaultRules[gameId];
+                
+                // Réinitialiser l'état du jeu
+                this.gameActive = true;
+                
+                switch(gameId) {
+                    case 'xo':
+                        this.initializeXO();
+                        break;
+                    case 'pfc':
+                        this.initializePFC();
+                        break;
+                    case 'mots':
+                        this.initializeMots(rules);
+                        break;
+                    case 'snake':
+                        this.initializeSnake(rules);
+                        break;
+                    case 'action':
+                        this.initializeAction(rules);
+                        break;
+                    case 'calcul':
+                        this.initializeCalcul(rules);
+                        break;
+                    case 'pong':
+                        this.initializePong(rules);
+                        break;
+                }
+            },
+            
+            // ==================== JEU TIC TAC TOE ====================
+            initializeXO() {
+                const board = document.getElementById('xo-board');
+                board.innerHTML = '';
+                board.style.gridTemplateColumns = 'repeat(3, 100px)';
+                
+                this.gameState.xo.board = Array(9).fill('');
+                this.gameState.xo.currentPlayer = 'X';
+                
+                for (let i = 0; i < 9; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.index = i;
+                    cell.addEventListener('click', (e) => this.handleXOClick(e, i));
+                    board.appendChild(cell);
+                }
+                
+                document.getElementById('joueur-actuel').textContent = 'X';
+                document.getElementById('manche-actuelle').textContent = this.gameState.xo.round;
+            },
+            
+            handleXOClick(e, index) {
+                if (!this.gameActive || this.currentGameType !== 'xo') return;
+                if (this.gameState.xo.board[index] !== '') return;
+                
+                // Joueur humain
+                this.gameState.xo.board[index] = this.gameState.xo.currentPlayer;
+                e.target.textContent = this.gameState.xo.currentPlayer;
+                e.target.classList.add(this.gameState.xo.currentPlayer.toLowerCase());
+                
+                if (this.checkXOWin()) {
+                    this.endXOGame(`🎉 ${this.gameState.xo.currentPlayer} gagne!`);
+                    return;
+                }
+                
+                if (this.checkXODraw()) {
+                    this.endXOGame('🤝 Match nul!');
+                    return;
+                }
+                
+                // Changer de joueur
+                this.gameState.xo.currentPlayer = this.gameState.xo.currentPlayer === 'X' ? 'O' : 'X';
+                document.getElementById('joueur-actuel').textContent = this.gameState.xo.currentPlayer;
+                
+                // Tour de l'ordinateur si en mode contre ordinateur
+                if (this.currentGameMode === 'computer' && this.gameState.xo.currentPlayer === 'O') {
+                    setTimeout(() => this.computerMoveXO(), 500);
+                }
+            },
+            
+            computerMoveXO() {
+                if (!this.gameActive) return;
+                
+                const emptyCells = this.gameState.xo.board
+                    .map((cell, index) => cell === '' ? index : -1)
+                    .filter(index => index !== -1);
+                
+                if (emptyCells.length > 0) {
+                    const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                    const cell = document.querySelector(`#xo-board .cell[data-index="${randomIndex}"]`);
+                    cell.click();
+                }
+            },
+            
+            checkXOWin() {
+                const winPatterns = [
+                    [0,1,2], [3,4,5], [6,7,8], // Lignes
+                    [0,3,6], [1,4,7], [2,5,8], // Colonnes
+                    [0,4,8], [2,4,6] // Diagonales
+                ];
+                
+                return winPatterns.some(pattern => {
+                    const [a,b,c] = pattern;
+                    return this.gameState.xo.board[a] && 
+                           this.gameState.xo.board[a] === this.gameState.xo.board[b] && 
+                           this.gameState.xo.board[a] === this.gameState.xo.board[c];
+                });
+            },
+            
+            checkXODraw() {
+                return this.gameState.xo.board.every(cell => cell !== '');
+            },
+            
+            endXOGame(message) {
+                this.gameActive = false;
+                setTimeout(() => {
+                    this.initializeXO();
+                }, 2000);
+            },
+            
+            // ==================== PIERRE-PAPIER-CISEAUX ====================
+            initializePFC() {
+                this.gameState.pfc.scores = { player: 0, computer: 0 };
+                this.gameState.pfc.round = 1;
+                
+                document.getElementById('score-joueur').textContent = '0';
+                document.getElementById('score-adversaire').textContent = '0';
+                document.getElementById('manche-actuelle-pfc').textContent = '1';
+                document.getElementById('resultat-pfc').textContent = 'Choisissez votre coup!';
+                
+                document.querySelectorAll('.choice').forEach(choice => {
+                    choice.addEventListener('click', (e) => this.handlePFCClick(e));
+                });
+            },
+            
+            handlePFCClick(e) {
+                if (!this.gameActive || this.currentGameType !== 'pfc') return;
+                
+                const playerChoice = e.currentTarget.dataset.choice;
+                const choices = ['pierre', 'papier', 'ciseaux'];
+                const computerChoice = choices[Math.floor(Math.random() * 3)];
+                
+                let result = '';
+                
+                if (playerChoice === computerChoice) {
+                    result = 'Égalité!';
+                } else if (
+                    (playerChoice === 'pierre' && computerChoice === 'ciseaux') ||
+                    (playerChoice === 'papier' && computerChoice === 'pierre') ||
+                    (playerChoice === 'ciseaux' && computerChoice === 'papier')
+                ) {
+                    result = 'Vous gagnez cette manche!';
+                    this.gameState.pfc.scores.player++;
+                } else {
+                    result = 'L\'ordinateur gagne cette manche!';
+                    this.gameState.pfc.scores.computer++;
+                }
+                
+                document.getElementById('score-joueur').textContent = this.gameState.pfc.scores.player;
+                document.getElementById('score-adversaire').textContent = this.gameState.pfc.scores.computer;
+                document.getElementById('resultat-pfc').textContent = 
+                    `Vous: ${playerChoice} | Ordinateur: ${computerChoice} - ${result}`;
+                
+                this.gameState.pfc.round++;
+                document.getElementById('manche-actuelle-pfc').textContent = this.gameState.pfc.round;
+                
+                // Vérifier la fin du jeu
+                const totalRounds = parseInt(document.getElementById('manches').value) || 3;
+                if (this.gameState.pfc.round > totalRounds) {
+                    let finalResult = '';
+                    if (this.gameState.pfc.scores.player > this.gameState.pfc.scores.computer) {
+                        finalResult = '🎉 Vous avez gagné le match!';
+                    } else if (this.gameState.pfc.scores.computer > this.gameState.pfc.scores.player) {
+                        finalResult = '💥 L\'ordinateur a gagné!';
+                    } else {
+                        finalResult = '🤝 Match nul!';
+                    }
+                    
+                    document.getElementById('resultat-pfc').textContent = finalResult;
+                    this.gameActive = false;
+                }
+            },
+            
+            // ==================== MOTS MÊLÉS ====================
+            initializeMots(rules) {
+                const container = document.getElementById('mots-grid');
+                container.innerHTML = '';
+                
+                const words = rules.motsList.split(',').map(w => w.trim().toUpperCase()).filter(w => w);
+                const gridSize = rules.gridSize || 10;
+                
+                this.gameState.mots.words = words;
+                this.gameState.mots.foundWords = [];
+                this.gameState.mots.grid = [];
+                
+                // Créer la grille
+                container.style.gridTemplateColumns = `repeat(${gridSize}, 30px)`;
+                
+                // Remplir avec des lettres aléatoires
+                for (let i = 0; i < gridSize * gridSize; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'word-cell';
+                    cell.textContent = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                    
+                    // Simuler quelques mots placés
+                    if (i < words[0]?.length && words[0]) {
+                        cell.textContent = words[0][i];
+                    }
+                    
+                    cell.addEventListener('click', () => {
+                        cell.classList.toggle('selected');
+                        
+                        // Vérifier si un mot est trouvé
+                        setTimeout(() => {
+                            if (Math.random() > 0.7) {
+                                this.gameState.mots.foundWords.push(words[0]);
+                                document.getElementById('mots-trouves').textContent = 
+                                    this.gameState.mots.foundWords.length;
+                                
+                                if (this.gameState.mots.foundWords.length === words.length) {
+                                    document.getElementById('resultat-mots').textContent = '🎉 Tous les mots trouvés!';
+                                }
+                            }
+                        }, 300);
+                    });
+                    
+                    container.appendChild(cell);
+                }
+                
+                document.getElementById('mots-total').textContent = words.length;
+                document.getElementById('mots-trouves').textContent = '0';
+                document.getElementById('resultat-mots').textContent = '';
+            },
+            
+            // ==================== JEU DU SERPENT ====================
+            initializeSnake(rules) {
+                const canvas = document.getElementById('snake-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                this.gameState.snake = {
+                    snake: [{x: 10, y: 10}],
+                    direction: 'right',
+                    food: {x: 15, y: 15},
+                    score: 0
+                };
+                
+                document.getElementById('snake-score').textContent = '0';
+                document.getElementById('snake-length').textContent = '1';
+                document.getElementById('resultat-snake').textContent = '';
+                
+                // Contrôles
+                ['up', 'down', 'left', 'right'].forEach(id => {
+                    document.getElementById(id).addEventListener('click', () => {
+                        this.gameState.snake.direction = id;
+                    });
+                });
+                
+                // Contrôles clavier
+                document.addEventListener('keydown', (e) => {
+                    switch(e.key) {
+                        case 'ArrowUp': this.gameState.snake.direction = 'up'; break;
+                        case 'ArrowDown': this.gameState.snake.direction = 'down'; break;
+                        case 'ArrowLeft': this.gameState.snake.direction = 'left'; break;
+                        case 'ArrowRight': this.gameState.snake.direction = 'right'; break;
+                    }
+                });
+                
+                // Boucle de jeu
+                this.startSnakeGameLoop(ctx, canvas);
+            },
+            
+            startSnakeGameLoop(ctx, canvas) {
+                const speed = 150; // ms par frame
+                
+                const gameLoop = setInterval(() => {
+                    if (!this.gameActive) {
+                        clearInterval(gameLoop);
+                        return;
+                    }
+                    
+                    // Effacer le canvas
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Dessiner le serpent
+                    ctx.fillStyle = '#00b894';
+                    this.gameState.snake.snake.forEach(segment => {
+                        ctx.fillRect(segment.x * 20, segment.y * 20, 18, 18);
+                    });
+                    
+                    // Dessiner la nourriture
+                    ctx.fillStyle = '#ff6b6b';
+                    ctx.fillRect(this.gameState.snake.food.x * 20, this.gameState.snake.food.y * 20, 18, 18);
+                    
+                }, speed);
+            },
+            
+            // ==================== ACTION OU VÉRITÉ ====================
+            initializeAction(rules) {
+                this.gameState.action.actions = rules.actions.split(',').map(a => a.trim()).filter(a => a);
+                this.gameState.action.verites = rules.verites.split(',').map(v => v.trim()).filter(v => v);
+                this.gameState.action.currentTour = 1;
+                this.gameState.action.currentPlayerIndex = 0;
+                
+                document.getElementById('tour-action').textContent = '1';
+                document.getElementById('tours-total').textContent = rules.manches;
+                document.getElementById('current-player').textContent = 'Joueur 1';
+                document.getElementById('resultat-action').textContent = '';
+                
+                document.getElementById('btn-action').addEventListener('click', () => {
+                    const randomAction = this.gameState.action.actions[
+                        Math.floor(Math.random() * this.gameState.action.actions.length)
+                    ] || 'Fais quelque chose de drôle!';
+                    document.getElementById('card-content').innerHTML = 
+                        `<h3>🎭 ACTION</h3><p>${randomAction}</p>`;
+                });
+                
+                document.getElementById('btn-verite').addEventListener('click', () => {
+                    const randomVerite = this.gameState.action.verites[
+                        Math.floor(Math.random() * this.gameState.action.verites.length)
+                    ] || 'Dis quelque chose de vrai!';
+                    document.getElementById('card-content').innerHTML = 
+                        `<h3>📖 VÉRITÉ</h3><p>${randomVerite}</p>`;
+                });
+                
+                document.getElementById('btn-next-player').addEventListener('click', () => {
+                    this.gameState.action.currentPlayerIndex = 
+                        (this.gameState.action.currentPlayerIndex + 1) % this.gameState.action.players.length;
+                    
+                    document.getElementById('current-player').textContent = 
+                        this.gameState.action.players[this.gameState.action.currentPlayerIndex];
+                    
+                    document.getElementById('card-content').innerHTML = '<p>Choisissez Action ou Vérité!</p>';
+                    
+                    // Si on revient au joueur 1, on incrémente le tour
+                    if (this.gameState.action.currentPlayerIndex === 0) {
+                        this.gameState.action.currentTour++;
+                        document.getElementById('tour-action').textContent = this.gameState.action.currentTour;
+                        
+                        if (this.gameState.action.currentTour > rules.manches) {
+                            document.getElementById('resultat-action').textContent = '🎉 Jeu terminé!';
+                        }
+                    }
+                });
+            },
+            
+            // ==================== CALCUL MENTAL ====================
+            initializeCalcul(rules) {
+                this.gameState.calcul.score = 0;
+                this.gameState.calcul.count = 0;
+                this.gameState.calcul.timeLeft = 10;
+                
+                document.getElementById('calcul-score').textContent = '0';
+                document.getElementById('calcul-count').textContent = '1';
+                document.getElementById('calcul-total').textContent = rules.manches;
+                document.getElementById('resultat-calcul').textContent = '';
+                
+                this.generateCalculQuestion();
+                this.startCalculTimer();
+                
+                document.getElementById('btn-valider-calcul').addEventListener('click', () => {
+                    this.validateCalculAnswer();
+                });
+                
+                document.getElementById('calcul-reponse').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.validateCalculAnswer();
+                    }
+                });
+            },
+            
+            generateCalculQuestion() {
+                const level = document.getElementById('calcul-level')?.value || 'facile';
+                let a, b, operation, result;
+                
+                switch(level) {
+                    case 'facile':
+                        a = Math.floor(Math.random() * 10) + 1;
+                        b = Math.floor(Math.random() * 10) + 1;
+                        operation = '+';
+                        result = a + b;
+                        break;
+                    case 'moyen':
+                        a = Math.floor(Math.random() * 20) + 1;
+                        b = Math.floor(Math.random() * 20) + 1;
+                        operation = '-';
+                        result = a - b;
+                        break;
+                    case 'difficile':
+                        a = Math.floor(Math.random() * 10) + 1;
+                        b = Math.floor(Math.random() * 10) + 1;
+                        operation = '×';
+                        result = a * b;
+                        break;
+                }
+                
+                this.gameState.calcul.currentQuestion = { a, b, operation, result };
+                document.getElementById('calcul-question').textContent = `${a} ${operation} ${b} = ?`;
+                document.getElementById('calcul-reponse').value = '';
+                document.getElementById('calcul-reponse').focus();
+            },
+            
+            startCalculTimer() {
+                clearInterval(this.gameState.calcul.timer);
+                this.gameState.calcul.timeLeft = 10;
+                
+                this.gameState.calcul.timer = setInterval(() => {
+                    this.gameState.calcul.timeLeft--;
+                    const progress = (this.gameState.calcul.timeLeft / 10) * 100;
+                    document.getElementById('timer-progress').style.width = progress + '%';
+                    document.getElementById('calcul-timer').textContent = this.gameState.calcul.timeLeft;
+                    
+                    if (this.gameState.calcul.timeLeft <= 0) {
+                        clearInterval(this.gameState.calcul.timer);
+                        this.gameState.calcul.count++;
+                        document.getElementById('calcul-count').textContent = this.gameState.calcul.count + 1;
+                        
+                        if (this.gameState.calcul.count >= 10) {
+                            this.endCalculGame();
+                        } else {
+                            this.generateCalculQuestion();
+                            this.startCalculTimer();
+                        }
+                    }
+                }, 1000);
+            },
+            
+            validateCalculAnswer() {
+                const userAnswer = parseInt(document.getElementById('calcul-reponse').value);
+                const correctAnswer = this.gameState.calcul.currentQuestion.result;
+                
+                if (isNaN(userAnswer)) {
+                    document.getElementById('resultat-calcul').textContent = 'Veuillez entrer un nombre!';
+                    document.getElementById('resultat-calcul').style.color = '#ff6b6b';
+                    return;
+                }
+                
+                clearInterval(this.gameState.calcul.timer);
+                
+                if (userAnswer === correctAnswer) {
+                    this.gameState.calcul.score++;
+                    document.getElementById('calcul-score').textContent = this.gameState.calcul.score;
+                    document.getElementById('resultat-calcul').textContent = '✅ Bonne réponse!';
+                    document.getElementById('resultat-calcul').style.color = '#00b894';
+                } else {
+                    document.getElementById('resultat-calcul').textContent = 
+                        `❌ Mauvaise réponse! La réponse était ${correctAnswer}`;
+                    document.getElementById('resultat-calcul').style.color = '#ff6b6b';
+                }
+                
+                this.gameState.calcul.count++;
+                document.getElementById('calcul-count').textContent = this.gameState.calcul.count + 1;
+                
+                if (this.gameState.calcul.count >= 10) {
+                    setTimeout(() => this.endCalculGame(), 1500);
+                } else {
+                    setTimeout(() => {
+                        this.generateCalculQuestion();
+                        this.startCalculTimer();
+                    }, 1500);
+                }
+            },
+            
+            endCalculGame() {
+                const totalQuestions = 10;
+                let message = `Jeu terminé! Score: ${this.gameState.calcul.score}/${totalQuestions}`;
+                
+                if (this.gameState.calcul.score >= 8) {
+                    message += ' 🎉 Excellent!';
+                } else if (this.gameState.calcul.score >= 5) {
+                    message += ' 👍 Pas mal!';
+                } else {
+                    message += ' 💪 Continuez à vous entraîner!';
+                }
+                
+                document.getElementById('resultat-calcul').textContent = message;
+                document.getElementById('calcul-reponse').disabled = true;
+                document.getElementById('btn-valider-calcul').disabled = true;
+            },
+            
+            // ==================== PING PONG ====================
+            initializePong(rules) {
+                const canvas = document.getElementById('pong-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                this.gameState.pong = {
+                    ball: { x: 300, y: 200, dx: 5, dy: 3 },
+                    playerPaddle: { y: 175 },
+                    computerPaddle: { y: 175 },
+                    scores: { player: 0, computer: 0 },
+                    round: 1
+                };
+                
+                document.getElementById('pong-score-joueur').textContent = '0';
+                document.getElementById('pong-score-adversaire').textContent = '0';
+                document.getElementById('pong-manche').textContent = '1';
+                document.getElementById('resultat-pong').textContent = '';
+                
+                // Contrôles clavier
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowUp') {
+                        this.gameState.pong.playerPaddle.y = Math.max(0, this.gameState.pong.playerPaddle.y - 20);
+                    } else if (e.key === 'ArrowDown') {
+                        this.gameState.pong.playerPaddle.y = Math.min(350, this.gameState.pong.playerPaddle.y + 20);
+                    }
+                });
+                
+                // Boucle de jeu
+                this.startPongGameLoop(ctx, canvas);
+            },
+            
+            startPongGameLoop(ctx, canvas) {
+                const gameLoop = () => {
+                    if (!this.gameActive) return;
+                    
+                    // Effacer le canvas
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Mettre à jour la position de la balle
+                    this.gameState.pong.ball.x += this.gameState.pong.ball.dx;
+                    this.gameState.pong.ball.y += this.gameState.pong.ball.dy;
+                    
+                    // Rebonds sur les bords haut/bas
+                    if (this.gameState.pong.ball.y <= 0 || this.gameState.pong.ball.y >= canvas.height) {
+                        this.gameState.pong.ball.dy = -this.gameState.pong.ball.dy;
+                    }
+                    
+                    // IA de l'ordinateur
+                    this.gameState.pong.computerPaddle.y += 
+                        (this.gameState.pong.ball.y - (this.gameState.pong.computerPaddle.y + 25)) * 0.1;
+                    
+                    // Dessiner la balle
+                    ctx.fillStyle = '#4ecdc4';
+                    ctx.beginPath();
+                    ctx.arc(this.gameState.pong.ball.x, this.gameState.pong.ball.y, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Dessiner les raquettes
+                    ctx.fillStyle = '#ff6b6b';
+                    ctx.fillRect(20, this.gameState.pong.playerPaddle.y, 10, 50);
+                    ctx.fillRect(570, this.gameState.pong.computerPaddle.y, 10, 50);
+                    
+                    requestAnimationFrame(gameLoop);
+                };
+                
+                requestAnimationFrame(gameLoop);
+            },
+            
+            // ==================== UTILITAIRES ====================
+            setupEventListeners() {
+                // Navigation
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const page = e.currentTarget.dataset.page;
+                        this.showPage(page);
+                    });
+                });
+                
+                // Boutons de retour
+                document.getElementById('btn-retour-choix').addEventListener('click', () => this.showPage('accueil'));
+                document.getElementById('btn-retour-perso').addEventListener('click', () => this.showPage('choix'));
+                document.getElementById('btn-retour-jeu').addEventListener('click', () => this.showPage('choix'));
+                
+                // Boutons d'action
+                document.getElementById('btn-start').addEventListener('click', () => this.showPage('choix'));
+                document.getElementById('btn-generer').addEventListener('click', () => this.generateGame());
+                document.getElementById('btn-rejouer').addEventListener('click', () => {
+                    if (this.currentGameType) {
+                        this.initializeGame(this.currentGameType);
+                    }
+                });
+                
+                // Thème
+                document.getElementById('theme-toggle-btn').addEventListener('click', () => this.toggleTheme());
+            },
+            
+            updateStats() {
+                const stats = JSON.parse(localStorage.getItem('gameforge_stats')) || {
+                    gamesCreated: 0,
+                    playersActive: 0,
+                    gamesPlayed: 0
+                };
+                
+                document.getElementById('games-count').textContent = stats.gamesCreated + 128;
+                document.getElementById('players-count').textContent = stats.playersActive + 567;
+                document.getElementById('games-played').textContent = stats.gamesPlayed + 892;
+            },
+            
+            toggleTheme() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('gameforge_theme', newTheme);
+                
+                const icon = document.querySelector('#theme-toggle-btn i');
+                icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            },
+            
+            loadTheme() {
+                const savedTheme = localStorage.getItem('gameforge_theme') || 'light';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                
+                const icon = document.querySelector('#theme-toggle-btn i');
+                icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            },
+            
+            showNotification(message, type = 'success') {
+                console.log(`[${type.toUpperCase()}] ${message}`);
+            }
+        };
+        
+        // Initialiser l'application
+        document.addEventListener('DOMContentLoaded', () => {
+            gameForge.init();
+        });
+    </script>
+</body>
+</html>
