@@ -3,40 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Créateur de Jeux</title>
+    <title>GameForge - Créateur de Jeux ESPORT</title>
     <link rel="stylesheet" href="style2.css">
 </head>
 <body>
+    <!-- Particules animées -->
+    <div class="particles" id="particles-container"></div>
+    
     <div class="container">
         <header>
-            <div class="logo">🎮 CréaJeux</div>
-            <nav>
-                <ul>
-                    <li><a href="#" class="nav-link active" data-page="accueil">Accueil</a></li>
-                    <li><a href="#" class="nav-link" data-page="choix">Types de Jeux</a></li>
-                    <li><a href="#" class="nav-link" data-page="personnalisation">Personnalisation</a></li>
-                    <li><a href="#" class="nav-link" data-page="jeu">Jeu</a></li>
-                </ul>
-            </nav>
+            <div class="container header-content">
+                <div class="head">
+                    <img src="logo.jpg" alt="gameforg" class="logo-img">
+                    <div class="esport-title">
+                        <h2 class="esport-main">GAMEFORGE</h2>
+                        <h3 class="esport-sub">ESPORT GAME CREATOR</h3>
+                    </div>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#" class="nav-link active" data-page="accueil">Home</a></li>
+                        <li><a href="#" class="nav-link" data-page="choix">Games</a></li>
+                        <li><a href="#" class="nav-link" data-page="personnalisation">Create</a></li>
+                        <li><a href="#" class="nav-link" data-page="jeu">Play</a></li>
+                    </ul>
+                </nav>
+            </div>
         </header>
         
-        <!-- Page d'accueil -->
+        <!-- Page d'accueil style ESPORT -->
         <section id="accueil" class="page active">
-            <h1>Bienvenue sur CréaJeux</h1>
-            <p>Créez vos propres jeux personnalisés en quelques étapes simples !</p>
-            <p>Notre plateforme vous permet de concevoir différents types de jeux, de définir vos propres règles et conditions, et de jouer immédiatement.</p>
-            <button class="btn" id="btn-creer">Créer un jeu</button>
-            <div class="stats" style="margin-top: 40px;">
+            <div class="main-title-container">
+                <h1 class="main-title">
+                    <span class="main-title-line1">GAMEFORGE</span><br>
+                    <span class="main-title-line2">CREATOR</span>
+                </h1>
+                <div class="title-separator"></div>
+            </div>
+            
+            <div class="subtitle-container">
+                <h2 class="subtitle">CREATE YOUR ESPORT GAMES</h2>
+            </div>
+            
+            <div class="get-started-container">
+                <button class="btn" id="btn-creer">GET STARTED</button>
+            </div>
+            
+            <div class="stats">
                 <div class="stat-item">
-                    <h3 id="games-count">0</h3>
+                    <h3 id="games-count">128</h3>
                     <p>Jeux créés</p>
                 </div>
                 <div class="stat-item">
-                    <h3 id="players-count">0</h3>
+                    <h3 id="players-count">567</h3>
                     <p>Joueurs actifs</p>
                 </div>
                 <div class="stat-item">
-                    <h3 id="games-played">0</h3>
+                    <h3 id="games-played">892</h3>
                     <p>Parties jouées</p>
                 </div>
             </div>
@@ -232,6 +255,7 @@
                         </div>
                     </div>
                     <div class="game-info">
+                        <div id="mots-timer" class="timer-display">Temps: 60s</div>
                         <p id="mode-info-mots">Mode: Solo</p>
                         <p>Mots trouvés: <span id="mots-trouves">0</span>/<span id="mots-total">0</span></p>
                         <div class="result" id="resultat-mots"></div>
@@ -254,6 +278,7 @@
                         </div>
                     </div>
                     <div class="game-info">
+                        <div id="snake-timer" class="timer-display">Temps: 00:00</div>
                         <p id="mode-info-snake">Mode: Solo</p>
                         <p>Score: <span id="snake-score">0</span></p>
                         <p>Longueur: <span id="snake-length">1</span></p>
@@ -327,7 +352,7 @@
         </section>
         
         <footer>
-            <p>© 2023 CréaJeux - Créez vos propres jeux en ligne</p>
+            <p>© 2024 GameForge - Créez vos propres jeux ESPORT en ligne</p>
         </footer>
     </div>
 

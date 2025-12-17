@@ -15,7 +15,7 @@ let gameRules = {
     pfc: { regles: "", victoire: "", defaite: "", manches: 3, punition: "" },
     quiz: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
     dice: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
-    mots: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", mots: "", gridSize: 10 },
+    mots: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", mots: "", gridSize: 10, timer: 60 },
     snake: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", vitesse: 5, scoreGoal: 50 },
     action: { regles: "", victoire: "", defaite: "", manches: 10, punition: "", actions: "", verites: "", timePerQuestion: 10 },
     calcul: { regles: "", victoire: "", defaite: "", manches: 10, punition: "", niveau: "facile", timePerQuestion: 10 },
@@ -26,6 +26,7 @@ let gameRules = {
 let gameBoard = [];
 let currentPlayer = 'X';
 
+// Variables spécifiques au Snake
 let snakeGame = {
     canvas: null,
     ctx: null,
@@ -34,7 +35,12 @@ let snakeGame = {
     food: {},
     gridSize: 20,
     score: 0,
-    gameLoop: null
+    gameLoop: null,
+    gameStarted: false,
+    gameOver: false,
+    timer: 0,
+    timerInterval: null,
+    timerLimit: 120
 };
 
 let pongGame = {
@@ -45,7 +51,9 @@ let pongGame = {
     computerPaddle: { x: 540, y: 175, width: 10, height: 50 },
     playerScore: 0,
     computerScore: 0,
-    gameLoop: null
+    gameLoop: null,
+    keys: {},
+    isInitialized: false
 };
 
 let actionVerite = {
@@ -68,7 +76,9 @@ let motsMelees = {
     grid: [],
     words: [],
     foundWords: [],
-    selectedCells: []
+    selectedCells: [],
+    gameTimer: null,
+    timeLeft: 60
 };
 
 let quizQuestions = [
@@ -217,8 +227,8 @@ function prefillCustomizationFields(gameType) {
             punition: "Sauter sur un pied 10 fois"
         },
         'mots': {
-            regles: "Trouvez tous les mots cachés dans la grille. Les mots peuvent être placés horizontalement, verticalement ou en diagonale.",
-            victoire: "Trouver tous les mots dans la grille",
+            regles: "Trouvez tous les mots cachés dans la grille. Les mots peuvent être placés horizontalement, verticalement ou en diagonale. Vous avez 1 minute.",
+            victoire: "Trouver tous les mots dans la grille avant la fin du temps",
             defaite: "Ne pas trouver tous les mots dans le temps imparti",
             manches: 1,
             punition: "Écrire 10 fois chaque mot non trouvé",
@@ -322,6 +332,10 @@ function addSpecificFields(gameType, defaultValues) {
                         <option value="12">12x12</option>
                         <option value="15">15x15</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="mots-timer">Temps limite (secondes) :</label>
+                    <input type="number" id="mots-timer" min="30" max="180" value="60">
                 </div>
             `;
             break;
@@ -435,6 +449,7 @@ function generateGame() {
         case 'mots':
             gameRules.mots.mots = document.getElementById('mots-list').value;
             gameRules.mots.gridSize = parseInt(document.getElementById('grid-size-mots').value);
+            gameRules.mots.timer = parseInt(document.getElementById('mots-timer').value) || 60;
             break;
         case 'snake':
             gameRules.snake.vitesse = parseInt(document.getElementById('snake-speed').value);
@@ -524,8 +539,8 @@ function updateGameInterfaceWithCustomRules() {
             <p><strong>Règles :</strong> ${rules.regles}</p>
             <p><strong>Victoire :</strong> ${rules.victoire}</p>
             <p><strong>Défaite :</strong> ${rules.defaite}</p>
-            <p><strong>Manches :</strong> ${rules.manches}</p>
-            <p><strong>Pénalité :</strong> ${rules.punition}</p>
+            ${rules.manches ? `<p><strong>Manches :</strong> ${rules.manches}</p>` : ''}
+            ${rules.punition ? `<p><strong>Pénalité du perdant :</strong> ${rules.punition}</p>` : ''}
         </div>
     `;
 }
@@ -720,9 +735,12 @@ function endXOGame(message, rules) {
     const resultDiv = document.createElement('div');
     resultDiv.className = 'result';
     
+    // Toujours afficher la punition à la fin du jeu
     let punishmentText = '';
-    if (message.includes('gagné') && message.includes('O')) {
+    if (message.includes('gagné')) {
         punishmentText = `<p class="punition">💥 Le perdant doit: ${rules.punition}</p>`;
+    } else {
+        punishmentText = `<p class="punition">💥 Les deux joueurs doivent: ${rules.punition}</p>`;
     }
     
     resultDiv.innerHTML = `
@@ -802,13 +820,22 @@ function handlePFCClick() {
     
     if (currentRound > rules.manches) {
         let finalResult = "Match nul!";
+        let punishmentText = `<p class="punition">💥 Les deux joueurs doivent: ${rules.punition}</p>`;
+        
         if (playerScore > computerScore) {
             finalResult = `🎉 Félicitations, vous avez gagné le match! ${rules.victoire}`;
+            punishmentText = `<p class="punition">💥 Le perdant doit: ${rules.punition}</p>`;
         } else if (computerScore > playerScore) {
-            finalResult = `💥 ${currentGameMode === 'computer' ? "L'ordinateur" : "L'adversaire"} a gagné! ${rules.defaite} - Punition: ${rules.punition}`;
+            finalResult = `💥 ${currentGameMode === 'computer' ? "L'ordinateur" : "L'adversaire"} a gagné! ${rules.defaite}`;
+            punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition}</p>`;
         }
         
-        document.getElementById('resultat-pfc').textContent = finalResult;
+        const gameInfo = document.querySelector('#jeu-pfc .game-info');
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'result';
+        resultDiv.innerHTML = `<h3>${finalResult}</h3>${punishmentText}`;
+        gameInfo.appendChild(resultDiv);
+        
         document.querySelectorAll('.choice').forEach(c => {
             c.style.pointerEvents = 'none';
         });
@@ -898,14 +925,19 @@ function handleQuizClick() {
 function endQuizGame() {
     const rules = gameRules.quiz;
     let finalMessage = `Quiz terminé! Votre score: ${quizScore}/${quizQuestions.length}`;
+    let punishmentText = '';
     
     if (quizScore >= Math.ceil(quizQuestions.length / 2)) {
         finalMessage += ` 🎉 ${rules.victoire}`;
+        punishmentText = `<p class="punition">💥 Vous avez évité la punition!</p>`;
     } else {
-        finalMessage += ` 💥 ${rules.defaite} - ${rules.punition}`;
+        finalMessage += ` 💥 ${rules.defaite}`;
+        punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition}</p>`;
     }
     
-    document.getElementById('resultat-quiz').textContent = finalMessage;
+    const resultDiv = document.getElementById('resultat-quiz');
+    resultDiv.innerHTML = `<h3>${finalMessage}</h3>${punishmentText}`;
+    
     document.querySelectorAll('.quiz-option').forEach(opt => {
         opt.style.pointerEvents = 'none';
     });
@@ -949,15 +981,18 @@ function rollDice() {
         // Vérifier la victoire
         const rules = gameRules.dice;
         if (diceScore >= 15) {
-            document.getElementById('resultat-dice').textContent = 
-               `🎉 Félicitations! ${rules.victoire}`;
+            const resultDiv = document.getElementById('resultat-dice');
+            resultDiv.innerHTML = `
+                <h3>🎉 Félicitations! ${rules.victoire}</h3>
+                <p class="punition">💥 Vous avez évité la punition!</p>
+            `;
             document.getElementById('btn-roll-dice').disabled = true;
         }
     }, 1000);
 }
 
 // =============================
-// JEU MOTS MÊLÉS
+// JEU MOTS MÊLÉS (avec timer)
 // =============================
 function initializeMotsMelees() {
     const rules = gameRules.mots;
@@ -973,16 +1008,42 @@ function initializeMotsMelees() {
     motsMelees.words = mots;
     motsMelees.foundWords = [];
     motsMelees.selectedCells = [];
+    motsMelees.timeLeft = rules.timer || 60;
     
     document.getElementById('mots-trouves').textContent = '0';
     document.getElementById('mots-total').textContent = mots.length;
-    document.getElementById('resultat-mots').textContent = '';
+    
+    // Créer l'élément timer s'il n'existe pas
+    let timerElement = document.getElementById('mots-timer');
+    if (!timerElement) {
+        timerElement = document.createElement('div');
+        timerElement.id = 'mots-timer';
+        timerElement.className = 'timer';
+        document.querySelector('#jeu-mots .game-info').appendChild(timerElement);
+    }
     
     // Générer la grille
     generateWordSearchGrid();
     
     // Afficher la liste des mots
     displayWordList();
+    
+    // Démarrer le timer
+    startMotsTimer();
+}
+
+function startMotsTimer() {
+    clearInterval(motsMelees.gameTimer);
+    
+    motsMelees.gameTimer = setInterval(() => {
+        motsMelees.timeLeft--;
+        document.getElementById('mots-timer').textContent = `Temps restant: ${motsMelees.timeLeft}s`;
+        
+        if (motsMelees.timeLeft <= 0) {
+            clearInterval(motsMelees.gameTimer);
+            endMotsGame(false);
+        }
+    }, 1000);
 }
 
 function generateWordSearchGrid() {
@@ -1110,6 +1171,11 @@ function selectWordCell(row, col) {
     checkWordAtPosition(row, col);
     
     cell.classList.add('selected');
+    
+    // Vérifier si tous les mots sont trouvés
+    if (motsMelees.foundWords.length === motsMelees.words.length) {
+        endMotsGame(true);
+    }
 }
 
 function checkWordAtPosition(row, col) {
@@ -1158,46 +1224,236 @@ function updateFoundWords() {
             item.style.color = '#4CAF50';
         }
     });
+}
+
+function endMotsGame(hasWon) {
+    clearInterval(motsMelees.gameTimer);
+    const rules = gameRules.mots;
     
-    if (motsMelees.foundWords.length === motsMelees.words.length) {
-        document.getElementById('resultat-mots').textContent = `🎉 ${gameRules.mots.victoire}`;
+    let message = '';
+    let punishmentText = '';
+    
+    if (hasWon) {
+        message = `🎉 Félicitations! Vous avez trouvé tous les mots en ${rules.timer - motsMelees.timeLeft} secondes! ${rules.victoire}`;
+        punishmentText = `<p class="punition">💥 Vous avez évité la punition!</p>`;
+    } else {
+        message = `💥 Temps écoulé! Vous avez trouvé ${motsMelees.foundWords.length}/${motsMelees.words.length} mots. ${rules.defaite}`;
+        const motsNonTrouves = motsMelees.words.filter(mot => !motsMelees.foundWords.includes(mot));
+        punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition.replace('chaque mot non trouvé', `écrire 10 fois "${motsNonTrouves.join(', ')}"`)}</p>`;
     }
+    
+    const resultDiv = document.getElementById('resultat-mots');
+    resultDiv.innerHTML = `<h3>${message}</h3>${punishmentText}`;
+    
+    // Désactiver les cellules
+    document.querySelectorAll('.word-cell').forEach(cell => {
+        cell.style.pointerEvents = 'none';
+    });
 }
 
 // =============================
-// JEU SNAKE
+// JEU SNAKE (CORRIGÉ)
 // =============================
 function initializeSnake() {
     const canvas = document.getElementById('snake-canvas');
     const ctx = canvas.getContext('2d');
     
+    // Arrêter le jeu précédent s'il existe
+    if (snakeGame.gameLoop) {
+        clearInterval(snakeGame.gameLoop);
+        clearInterval(snakeGame.timerInterval);
+        document.removeEventListener('keydown', handleSnakeKeyPress);
+    }
+    
+    // Réinitialiser complètement le jeu
     snakeGame.canvas = canvas;
     snakeGame.ctx = ctx;
     snakeGame.snake = [{x: 10, y: 10}];
     snakeGame.direction = 'right';
+    snakeGame.food = {x: 15, y: 15};
     snakeGame.score = 0;
+    snakeGame.gameLoop = null;
+    snakeGame.gameStarted = false;
+    snakeGame.gameOver = false;
+    snakeGame.timer = 0;
+    snakeGame.timerInterval = null;
     
+    // Réinitialiser l'affichage
+    document.getElementById('snake-score').textContent = '0';
+    document.getElementById('snake-length').textContent = '1';
+    document.getElementById('resultat-snake').innerHTML = '';
+    
+    // Créer ou mettre à jour l'élément timer
+    let timerElement = document.getElementById('snake-timer');
+    if (!timerElement) {
+        timerElement = document.createElement('div');
+        timerElement.id = 'snake-timer';
+        timerElement.className = 'timer-display';
+        document.querySelector('#jeu-snake .game-info').prepend(timerElement);
+    }
+    timerElement.textContent = 'Temps: 00:00';
+    
+    // Créer l'écran de démarrage
+    createSnakeStartScreen();
+    
+    // Désactiver les contrôles au début
+    disableSnakeControls();
+}
+
+function createSnakeStartScreen() {
+    // Supprimer l'écran existant
+    const existingScreen = document.getElementById('snake-start-screen');
+    if (existingScreen) {
+        existingScreen.remove();
+    }
+    
+    // Créer un nouvel écran de démarrage
+    const startScreen = document.createElement('div');
+    startScreen.id = 'snake-start-screen';
+    startScreen.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        z-index: 100;
+        min-width: 300px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    `;
+    
+    const rules = gameRules.snake;
+    startScreen.innerHTML = `
+        <h2 style="color: #4ecdc4; margin-bottom: 20px;">🐍 Jeu du Serpent</h2>
+        <p style="margin-bottom: 15px;"><strong>Objectif :</strong> Atteindre ${rules.scoreGoal || 50} points</p>
+        <p style="margin-bottom: 15px;"><strong>Contrôles :</strong> Flèches directionnelles ou boutons</p>
+        <p style="margin-bottom: 20px;"><strong>Pénalité :</strong> ${rules.punition || "Faire 20 sauts"}</p>
+        <p style="margin-bottom: 25px; color: #ff9f43;"><strong>⏱️ Temps limite : 2 minutes</strong></p>
+        <button id="start-snake-game-btn" style="
+            background: linear-gradient(135deg, #4ecdc4 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        ">
+            🎮 Commencer le jeu
+        </button>
+    `;
+    
+    document.querySelector('.snake-container').appendChild(startScreen);
+    
+    // Ajouter l'événement au bouton de démarrage
+    document.getElementById('start-snake-game-btn').addEventListener('click', startSnakeGame);
+}
+
+function startSnakeGame() {
+    // Masquer l'écran de démarrage
+    const startScreen = document.getElementById('snake-start-screen');
+    if (startScreen) {
+        startScreen.style.display = 'none';
+    }
+    
+    // Supprimer l'écran de fin s'il existe
+    const gameOverScreen = document.getElementById('snake-game-over');
+    if (gameOverScreen) {
+        gameOverScreen.remove();
+    }
+    
+    // Réinitialiser le jeu
+    snakeGame.snake = [{x: 10, y: 10}];
+    snakeGame.direction = 'right';
+    snakeGame.food = {x: 15, y: 15};
+    snakeGame.score = 0;
+    snakeGame.gameStarted = true;
+    snakeGame.gameOver = false;
+    snakeGame.timer = 0;
+    
+    // Mettre à jour l'affichage
+    document.getElementById('snake-score').textContent = '0';
+    document.getElementById('snake-length').textContent = '1';
+    document.getElementById('resultat-snake').innerHTML = '';
+    
+    // Activer les contrôles
+    enableSnakeControls();
+    
+    // Ajouter les écouteurs d'événements
+    setupSnakeControls();
+    
+    // Démarrer le timer
+    startSnakeTimer();
+    
+    // Générer la première nourriture
     generateSnakeFood();
     
-    document.getElementById('snake-score').textContent = snakeGame.score;
-    document.getElementById('snake-length').textContent = snakeGame.snake.length;
-    document.getElementById('resultat-snake').textContent = '';
-    
-    if (snakeGame.gameLoop) clearInterval(snakeGame.gameLoop);
-    
+    // Démarrer la boucle de jeu
     const speed = 1000 / (gameRules.snake.vitesse * 10);
+    if (snakeGame.gameLoop) clearInterval(snakeGame.gameLoop);
     snakeGame.gameLoop = setInterval(updateSnake, speed);
     
-    document.getElementById('up').addEventListener('click', () => changeSnakeDirection('up'));
-    document.getElementById('down').addEventListener('click', () => changeSnakeDirection('down'));
-    document.getElementById('left').addEventListener('click', () => changeSnakeDirection('left'));
-    document.getElementById('right').addEventListener('click', () => changeSnakeDirection('right'));
+    // Dessiner l'état initial
+    drawSnake();
+}
+
+function setupSnakeControls() {
+    // Configurer les boutons tactiles
+    const upBtn = document.getElementById('up');
+    const downBtn = document.getElementById('down');
+    const leftBtn = document.getElementById('left');
+    const rightBtn = document.getElementById('right');
     
+    if (upBtn) {
+        upBtn.onclick = null;
+        upBtn.addEventListener('click', () => changeSnakeDirection('up'));
+    }
+    if (downBtn) {
+        downBtn.onclick = null;
+        downBtn.addEventListener('click', () => changeSnakeDirection('down'));
+    }
+    if (leftBtn) {
+        leftBtn.onclick = null;
+        leftBtn.addEventListener('click', () => changeSnakeDirection('left'));
+    }
+    if (rightBtn) {
+        rightBtn.onclick = null;
+        rightBtn.addEventListener('click', () => changeSnakeDirection('right'));
+    }
+    
+    // Ajouter l'écouteur clavier
+    document.removeEventListener('keydown', handleSnakeKeyPress);
     document.addEventListener('keydown', handleSnakeKeyPress);
 }
 
+function enableSnakeControls() {
+    const controls = ['up', 'down', 'left', 'right'];
+    controls.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+        }
+    });
+}
+
+function disableSnakeControls() {
+    const controls = ['up', 'down', 'left', 'right'];
+    controls.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.5';
+        }
+    });
+}
+
 function handleSnakeKeyPress(e) {
-    if (currentGameType !== 'snake') return;
+    if (!snakeGame.gameStarted || snakeGame.gameOver || currentGameType !== 'snake') return;
     
     switch(e.key) {
         case 'ArrowUp': changeSnakeDirection('up'); break;
@@ -1208,19 +1464,68 @@ function handleSnakeKeyPress(e) {
 }
 
 function changeSnakeDirection(newDirection) {
+    if (!snakeGame.gameStarted || snakeGame.gameOver) return;
+    
     const opposites = {up: 'down', down: 'up', left: 'right', right: 'left'};
     if (newDirection !== opposites[snakeGame.direction]) {
         snakeGame.direction = newDirection;
     }
 }
 
+function startSnakeTimer() {
+    if (snakeGame.timerInterval) clearInterval(snakeGame.timerInterval);
+    
+    snakeGame.timerInterval = setInterval(() => {
+        if (!snakeGame.gameStarted || snakeGame.gameOver) return;
+        
+        snakeGame.timer++;
+        updateSnakeTimerDisplay();
+        
+        // Vérifier si le temps est écoulé (2 minutes = 120 secondes)
+        if (snakeGame.timer >= 120) {
+            endSnakeGame("⏰ Temps écoulé !");
+        }
+    }, 1000);
+}
+
+function updateSnakeTimerDisplay() {
+    const timerElement = document.getElementById('snake-timer');
+    if (!timerElement) return;
+    
+    const minutes = Math.floor(snakeGame.timer / 60);
+    const seconds = snakeGame.timer % 60;
+    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    timerElement.textContent = `⏱️ ${timeString}`;
+    
+    // Changer la couleur selon le temps restant
+    const timeLeft = 120 - snakeGame.timer;
+    if (timeLeft <= 30) {
+        timerElement.style.color = '#ff9f43';
+        if (timeLeft <= 10) {
+            timerElement.style.color = '#ff6b6b';
+            timerElement.style.animation = 'blink 1s infinite';
+        }
+    }
+}
+
 function generateSnakeFood() {
     const x = Math.floor(Math.random() * (snakeGame.canvas.width / snakeGame.gridSize));
     const y = Math.floor(Math.random() * (snakeGame.canvas.height / snakeGame.gridSize));
+    
+    // Vérifier que la nourriture n'apparaît pas sur le serpent
+    for (let segment of snakeGame.snake) {
+        if (segment.x === x && segment.y === y) {
+            return generateSnakeFood(); // Réessayer
+        }
+    }
+    
     snakeGame.food = {x, y};
 }
 
 function updateSnake() {
+    if (!snakeGame.gameStarted || snakeGame.gameOver) return;
+    
     const head = {...snakeGame.snake[0]};
     
     switch(snakeGame.direction) {
@@ -1230,31 +1535,37 @@ function updateSnake() {
         case 'right': head.x++; break;
     }
     
+    // Vérifier les collisions avec les murs
     if (head.x < 0 || head.x >= snakeGame.canvas.width / snakeGame.gridSize ||
         head.y < 0 || head.y >= snakeGame.canvas.height / snakeGame.gridSize) {
-        endSnakeGame();
+        endSnakeGame("💥 Le serpent a touché un mur !");
         return;
     }
     
-    for (let segment of snakeGame.snake) {
-        if (head.x === segment.x && head.y === segment.y) {
-            endSnakeGame();
+    // Vérifier les collisions avec soi-même
+    for (let i = 1; i < snakeGame.snake.length; i++) {
+        if (head.x === snakeGame.snake[i].x && head.y === snakeGame.snake[i].y) {
+            endSnakeGame("💥 Le serpent s'est mordu la queue !");
             return;
         }
     }
     
     snakeGame.snake.unshift(head);
     
+    // Vérifier si la nourriture est mangée
     if (head.x === snakeGame.food.x && head.y === snakeGame.food.y) {
         snakeGame.score += 10;
         document.getElementById('snake-score').textContent = snakeGame.score;
         document.getElementById('snake-length').textContent = snakeGame.snake.length;
         generateSnakeFood();
         
+        // Vérifier la victoire
         if (snakeGame.score >= (gameRules.snake.scoreGoal || 50)) {
-            document.getElementById('resultat-snake').textContent = `🎉 ${gameRules.snake.victoire}`;
-            clearInterval(snakeGame.gameLoop);
-            document.removeEventListener('keydown', handleSnakeKeyPress);
+            const minutes = Math.floor(snakeGame.timer / 60);
+            const seconds = snakeGame.timer % 60;
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            endSnakeGame(`🎉 Victoire ! ${gameRules.snake.victoire || "Vous avez atteint l'objectif !"}`, true);
             return;
         }
     } else {
@@ -1265,33 +1576,174 @@ function updateSnake() {
 }
 
 function drawSnake() {
+    if (!snakeGame.ctx) return;
+    
     const ctx = snakeGame.ctx;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    // Effacer le canvas
+    ctx.clearRect(0, 0, snakeGame.canvas.width, snakeGame.canvas.height);
+    
+    // Dessiner le fond
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
     ctx.fillRect(0, 0, snakeGame.canvas.width, snakeGame.canvas.height);
     
-    ctx.fillStyle = '#4ecdc4';
-    for (let segment of snakeGame.snake) {
-        ctx.fillRect(
-            segment.x * snakeGame.gridSize,
-            segment.y * snakeGame.gridSize,
-            snakeGame.gridSize - 2,
-            snakeGame.gridSize - 2
-        );
+    // Dessiner la grille
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < snakeGame.canvas.width; x += snakeGame.gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, snakeGame.canvas.height);
+        ctx.stroke();
+    }
+    for (let y = 0; y < snakeGame.canvas.height; y += snakeGame.gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(snakeGame.canvas.width, y);
+        ctx.stroke();
     }
     
+    // Dessiner le serpent
+    snakeGame.snake.forEach((segment, index) => {
+        if (index === 0) {
+            // Tête du serpent
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(
+                segment.x * snakeGame.gridSize,
+                segment.y * snakeGame.gridSize,
+                snakeGame.gridSize - 2,
+                snakeGame.gridSize - 2
+            );
+        } else {
+            // Corps du serpent
+            ctx.fillStyle = '#4ecdc4';
+            ctx.fillRect(
+                segment.x * snakeGame.gridSize,
+                segment.y * snakeGame.gridSize,
+                snakeGame.gridSize - 2,
+                snakeGame.gridSize - 2
+            );
+        }
+    });
+    
+    // Dessiner la nourriture
     ctx.fillStyle = '#ff6b6b';
-    ctx.fillRect(
-        snakeGame.food.x * snakeGame.gridSize,
-        snakeGame.food.y * snakeGame.gridSize,
-        snakeGame.gridSize - 2,
-        snakeGame.gridSize - 2
+    ctx.beginPath();
+    ctx.arc(
+        snakeGame.food.x * snakeGame.gridSize + snakeGame.gridSize / 2,
+        snakeGame.food.y * snakeGame.gridSize + snakeGame.gridSize / 2,
+        snakeGame.gridSize / 2 - 2,
+        0,
+        Math.PI * 2
     );
+    ctx.fill();
 }
 
-function endSnakeGame() {
-    clearInterval(snakeGame.gameLoop);
-    document.getElementById('resultat-snake').textContent = `💥 ${gameRules.snake.defaite} - ${gameRules.snake.punition}`;
+function endSnakeGame(message, isVictory = false) {
+    if (snakeGame.gameOver) return;
+    
+    snakeGame.gameOver = true;
+    snakeGame.gameStarted = false;
+    
+    if (snakeGame.gameLoop) {
+        clearInterval(snakeGame.gameLoop);
+        snakeGame.gameLoop = null;
+    }
+    
+    if (snakeGame.timerInterval) {
+        clearInterval(snakeGame.timerInterval);
+        snakeGame.timerInterval = null;
+    }
+    
+    // Désactiver les contrôles
+    disableSnakeControls();
+    
+    // Retirer l'écouteur clavier
     document.removeEventListener('keydown', handleSnakeKeyPress);
+    
+    const rules = gameRules.snake;
+    const minutes = Math.floor(snakeGame.timer / 60);
+    const seconds = snakeGame.timer % 60;
+    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    // Afficher l'écran de fin de jeu
+    createSnakeGameOverScreen(message, isVictory, timeString);
+}
+
+function createSnakeGameOverScreen(message, isVictory, timeString) {
+    // Créer l'écran de fin de jeu
+    const gameOverScreen = document.createElement('div');
+    gameOverScreen.id = 'snake-game-over';
+    gameOverScreen.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        z-index: 200;
+        min-width: 300px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    `;
+    
+    const rules = gameRules.snake;
+    let punishmentText = '';
+    
+    if (!isVictory && rules.punition) {
+        punishmentText = `<div style="
+            background: rgba(255, 107, 107, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ff6b6b;
+        ">
+            💥 Vous devez: ${rules.punition}
+        </div>`;
+    } else if (isVictory) {
+        punishmentText = `<div style="
+            background: rgba(78, 205, 196, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #4ecdc4;
+        ">
+            🎉 Vous avez évité la punition !
+        </div>`;
+    }
+    
+    gameOverScreen.innerHTML = `
+        <h2 style="color: ${isVictory ? '#4ecdc4' : '#ff6b6b'}; margin-bottom: 20px;">
+            ${isVictory ? '🎉 VICTOIRE !' : '💥 GAME OVER'}
+        </h2>
+        <p style="margin-bottom: 15px; font-size: 1.1em;">${message}</p>
+        <p style="margin-bottom: 10px;"><strong>Score final :</strong> ${snakeGame.score} points</p>
+        <p style="margin-bottom: 10px;"><strong>Longueur :</strong> ${snakeGame.snake.length}</p>
+        <p style="margin-bottom: 20px;"><strong>Temps :</strong> ${timeString}</p>
+        ${punishmentText}
+        <button id="restart-snake-game-btn" style="
+            background: linear-gradient(135deg, #4ecdc4 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        ">
+            🔄 Rejouer
+        </button>
+    `;
+    
+    document.querySelector('.snake-container').appendChild(gameOverScreen);
+    
+    // Ajouter l'événement au bouton de redémarrage
+    document.getElementById('restart-snake-game-btn').addEventListener('click', () => {
+        gameOverScreen.remove();
+        initializeSnake();
+    });
 }
 
 // =============================
@@ -1342,6 +1794,11 @@ function initializeActionVerite() {
     document.getElementById('resultat-action').textContent = '';
     document.getElementById('card-content').textContent = 'Cliquez sur un bouton pour commencer!';
     
+    // Réactiver les boutons
+    document.getElementById('btn-action').disabled = false;
+    document.getElementById('btn-verite').disabled = false;
+    document.getElementById('btn-next-player').disabled = false;
+    
     document.getElementById('btn-action').addEventListener('click', showRandomAction);
     document.getElementById('btn-verite').addEventListener('click', showRandomVerite);
     document.getElementById('btn-next-player').addEventListener('click', nextPlayer);
@@ -1368,7 +1825,11 @@ function nextPlayer() {
         document.getElementById('tour-action').textContent = actionVerite.currentTour;
         
         if (actionVerite.currentTour > gameRules.action.manches) {
-            document.getElementById('resultat-action').textContent = `🎉 ${gameRules.action.victoire}`;
+            const rules = gameRules.action;
+            document.getElementById('resultat-action').innerHTML = `
+                <h3>🎉 ${rules.victoire}</h3>
+                <p class="punition">💥 Tous les joueurs ont évité la punition!</p>
+            `;
             document.getElementById('btn-action').disabled = true;
             document.getElementById('btn-verite').disabled = true;
             document.getElementById('btn-next-player').disabled = true;
@@ -1500,13 +1961,14 @@ function validateCalculAnswer() {
     
     if (userAnswer === correctAnswer) {
         calculMental.score++;
-        document.getElementById('calcul-score').textContent = calculMental.score;
         document.getElementById('resultat-calcul').textContent = "✅ Bonne réponse!";
         document.getElementById('resultat-calcul').style.color = '#4CAF50';
     } else {
         document.getElementById('resultat-calcul').textContent = `❌ Mauvaise réponse! La réponse était ${correctAnswer}`;
         document.getElementById('resultat-calcul').style.color = '#FF6B6B';
     }
+    
+    document.getElementById('calcul-score').textContent = calculMental.score;
     
     calculMental.count++;
     document.getElementById('calcul-count').textContent = calculMental.count;
@@ -1524,14 +1986,17 @@ function validateCalculAnswer() {
 function endCalculGame() {
     const rules = gameRules.calcul;
     let message = `Jeu terminé! Score: ${calculMental.score}/${rules.manches}`;
+    let punishmentText = '';
     
     if (calculMental.score >= Math.ceil(rules.manches * 0.8)) {
         message += ` 🎉 ${rules.victoire}`;
+        punishmentText = `<p class="punition">💥 Vous avez évité la punition!</p>`;
     } else {
-        message += ` 💥 ${rules.defaite} - ${rules.punition}`;
+        message += ` 💥 ${rules.defaite}`;
+        punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition}</p>`;
     }
     
-    document.getElementById('resultat-calcul').textContent = message;
+    document.getElementById('resultat-calcul').innerHTML = `<h3>${message}</h3>${punishmentText}`;
     document.getElementById('calcul-reponse').disabled = true;
     document.getElementById('btn-valider-calcul').disabled = true;
 }
@@ -1543,20 +2008,30 @@ function initializePong() {
     const canvas = document.getElementById('pong-canvas');
     const ctx = canvas.getContext('2d');
     
+    // Arrêter le jeu précédent s'il existe
+    if (pongGame.gameLoop) {
+        clearInterval(pongGame.gameLoop);
+        document.removeEventListener('keydown', handlePongKeyDown);
+        document.removeEventListener('keyup', handlePongKeyUp);
+    }
+    
+    // Réinitialiser le jeu
     pongGame.canvas = canvas;
     pongGame.ctx = ctx;
     pongGame.ball = { 
         x: canvas.width / 2, 
         y: canvas.height / 2, 
-        dx: gameRules.pong.vitesse, 
-        dy: gameRules.pong.vitesse, 
+        dx: (Math.random() > 0.5 ? 1 : -1) * gameRules.pong.vitesse, 
+        dy: (Math.random() - 0.5) * gameRules.pong.vitesse, 
         radius: 10 
     };
     pongGame.playerPaddle = { x: 50, y: canvas.height / 2 - 25, width: 10, height: 50 };
     pongGame.computerPaddle = { x: canvas.width - 60, y: canvas.height / 2 - 25, width: 10, height: 50 };
     pongGame.playerScore = 0;
     pongGame.computerScore = 0;
+    pongGame.keys = {};
     currentRound = 1;
+    pongGame.isInitialized = true;
     
     document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
     document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
@@ -1564,67 +2039,95 @@ function initializePong() {
     document.getElementById('pong-manches').textContent = gameRules.pong.manches;
     document.getElementById('resultat-pong').textContent = '';
     
-    document.addEventListener('keydown', handlePongKeyPress);
+    // Ajouter les écouteurs de clavier
+    document.addEventListener('keydown', handlePongKeyDown);
+    document.addEventListener('keyup', handlePongKeyUp);
     
-    if (pongGame.gameLoop) clearInterval(pongGame.gameLoop);
+    // Démarrer le jeu
     pongGame.gameLoop = setInterval(updatePong, 1000 / 60);
     
     drawPong();
 }
 
-function handlePongKeyPress(e) {
+function handlePongKeyDown(e) {
     if (currentGameType !== 'pong') return;
-    
-    const paddleSpeed = 10;
-    switch(e.key) {
-        case 'ArrowUp':
-            pongGame.playerPaddle.y = Math.max(0, pongGame.playerPaddle.y - paddleSpeed);
-            break;
-        case 'ArrowDown':
-            pongGame.playerPaddle.y = Math.min(
-                pongGame.canvas.height - pongGame.playerPaddle.height,
-                pongGame.playerPaddle.y + paddleSpeed
-            );
-            break;
-    }
+    pongGame.keys[e.key] = true;
+}
+
+function handlePongKeyUp(e) {
+    if (currentGameType !== 'pong') return;
+    pongGame.keys[e.key] = false;
 }
 
 function updatePong() {
-    const ball = pongGame.ball;
-    const player = pongGame.playerPaddle;
-    const computer = pongGame.computerPaddle;
-    
-    ball.x += ball.dx;
-    ball.y += ball.dy;
-    
-    if (ball.y - ball.radius < 0 || ball.y + ball.radius > pongGame.canvas.height) {
-        ball.dy = -ball.dy;
+    // Gestion des touches pour le joueur
+    const paddleSpeed = 8;
+    if (pongGame.keys['ArrowUp']) {
+        pongGame.playerPaddle.y = Math.max(0, pongGame.playerPaddle.y - paddleSpeed);
+    }
+    if (pongGame.keys['ArrowDown']) {
+        pongGame.playerPaddle.y = Math.min(
+            pongGame.canvas.height - pongGame.playerPaddle.height,
+            pongGame.playerPaddle.y + paddleSpeed
+        );
     }
     
-    computer.y += (ball.y - (computer.y + computer.height / 2)) * 0.1;
-    computer.y = Math.max(0, Math.min(pongGame.canvas.height - computer.height, computer.y));
+    // Déplacer la balle
+    pongGame.ball.x += pongGame.ball.dx;
+    pongGame.ball.y += pongGame.ball.dy;
     
-    if (ball.x - ball.radius < player.x + player.width && 
-        ball.y > player.y && ball.y < player.y + player.height) {
-        ball.dx = Math.abs(ball.dx);
+    // Rebond sur les murs haut/bas
+    if (pongGame.ball.y - pongGame.ball.radius < 0 || pongGame.ball.y + pongGame.ball.radius > pongGame.canvas.height) {
+        pongGame.ball.dy = -pongGame.ball.dy;
     }
     
-    if (ball.x + ball.radius > computer.x && 
-        ball.y > computer.y && ball.y < computer.y + computer.height) {
-        ball.dx = -Math.abs(ball.dx);
+    // IA de l'ordinateur
+    const computerPaddleCenter = pongGame.computerPaddle.y + pongGame.computerPaddle.height / 2;
+    if (computerPaddleCenter < pongGame.ball.y - 10) {
+        pongGame.computerPaddle.y = Math.min(
+            pongGame.canvas.height - pongGame.computerPaddle.height,
+            pongGame.computerPaddle.y + 6
+        );
+    } else if (computerPaddleCenter > pongGame.ball.y + 10) {
+        pongGame.computerPaddle.y = Math.max(0, pongGame.computerPaddle.y - 6);
     }
     
-    if (ball.x - ball.radius < 0) {
+    // Collision avec les raquettes
+    // Joueur
+    if (pongGame.ball.x - pongGame.ball.radius < pongGame.playerPaddle.x + pongGame.playerPaddle.width &&
+        pongGame.ball.x + pongGame.ball.radius > pongGame.playerPaddle.x &&
+        pongGame.ball.y > pongGame.playerPaddle.y &&
+        pongGame.ball.y < pongGame.playerPaddle.y + pongGame.playerPaddle.height) {
+        
+        // Calculer l'angle de rebond
+        const hitPosition = (pongGame.ball.y - (pongGame.playerPaddle.y + pongGame.playerPaddle.height / 2)) / (pongGame.playerPaddle.height / 2);
+        pongGame.ball.dx = Math.abs(pongGame.ball.dx);
+        pongGame.ball.dy = hitPosition * 7;
+    }
+    
+    // Ordinateur
+    if (pongGame.ball.x + pongGame.ball.radius > pongGame.computerPaddle.x &&
+        pongGame.ball.x - pongGame.ball.radius < pongGame.computerPaddle.x + pongGame.computerPaddle.width &&
+        pongGame.ball.y > pongGame.computerPaddle.y &&
+        pongGame.ball.y < pongGame.computerPaddle.y + pongGame.computerPaddle.height) {
+        
+        const hitPosition = (pongGame.ball.y - (pongGame.computerPaddle.y + pongGame.computerPaddle.height / 2)) / (pongGame.computerPaddle.height / 2);
+        pongGame.ball.dx = -Math.abs(pongGame.ball.dx);
+        pongGame.ball.dy = hitPosition * 7;
+    }
+    
+    // Marquer un point
+    if (pongGame.ball.x - pongGame.ball.radius < 0) {
         pongGame.computerScore++;
+        document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
         resetPongBall();
-    } else if (ball.x + ball.radius > pongGame.canvas.width) {
+    } else if (pongGame.ball.x + pongGame.ball.radius > pongGame.canvas.width) {
         pongGame.playerScore++;
+        document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
         resetPongBall();
     }
     
-    document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
-    document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
-    
+    // Vérifier la fin de manche
     const pointsToWin = gameRules.pong.pointsToWin || 5;
     if (pongGame.playerScore >= pointsToWin || pongGame.computerScore >= pointsToWin) {
         endPongRound();
@@ -1636,19 +2139,20 @@ function updatePong() {
 function resetPongBall() {
     pongGame.ball.x = pongGame.canvas.width / 2;
     pongGame.ball.y = pongGame.canvas.height / 2;
-    pongGame.ball.dx = -pongGame.ball.dx;
-    pongGame.ball.dy = (Math.random() - 0.5) * 10;
+    pongGame.ball.dx = (Math.random() > 0.5 ? 1 : -1) * gameRules.pong.vitesse;
+    pongGame.ball.dy = (Math.random() - 0.5) * gameRules.pong.vitesse;
 }
 
 function drawPong() {
     const ctx = pongGame.ctx;
-    const ball = pongGame.ball;
-    const player = pongGame.playerPaddle;
-    const computer = pongGame.computerPaddle;
+    // Effacer le canvas
+    ctx.clearRect(0, 0, pongGame.canvas.width, pongGame.canvas.height);
     
+    // Dessiner le fond
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.fillRect(0, 0, pongGame.canvas.width, pongGame.canvas.height);
     
+    // Ligne centrale
     ctx.setLineDash([5, 15]);
     ctx.beginPath();
     ctx.moveTo(pongGame.canvas.width / 2, 0);
@@ -1657,36 +2161,62 @@ function drawPong() {
     ctx.stroke();
     ctx.setLineDash([]);
     
+    // Dessiner la balle
     ctx.fillStyle = '#4ecdc4';
     ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.arc(pongGame.ball.x, pongGame.ball.y, pongGame.ball.radius, 0, Math.PI * 2);
     ctx.fill();
     
+    // Dessiner les raquettes
     ctx.fillStyle = '#ff6b6b';
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-    ctx.fillRect(computer.x, computer.y, computer.width, computer.height);
+    ctx.fillRect(pongGame.playerPaddle.x, pongGame.playerPaddle.y, 
+                 pongGame.playerPaddle.width, pongGame.playerPaddle.height);
+    
+    ctx.fillStyle = '#4ecdc4';
+    ctx.fillRect(pongGame.computerPaddle.x, pongGame.computerPaddle.y, 
+                 pongGame.computerPaddle.width, pongGame.computerPaddle.height);
 }
 
 function endPongRound() {
+    clearInterval(pongGame.gameLoop);
+    pongGame.gameLoop = null;
+    
     currentRound++;
     document.getElementById('pong-manche').textContent = currentRound;
     
     if (currentRound > gameRules.pong.manches) {
-        clearInterval(pongGame.gameLoop);
+        // Fin du match
+        document.removeEventListener('keydown', handlePongKeyDown);
+        document.removeEventListener('keyup', handlePongKeyUp);
+        
         let message = "Match terminé! ";
+        const rules = gameRules.pong;
+        
         if (pongGame.playerScore > pongGame.computerScore) {
-            message += `🎉 ${gameRules.pong.victoire}`;
+            message += `🎉 ${rules.victoire}`;
+            document.getElementById('resultat-pong').innerHTML = `
+                <h3>${message}</h3>
+                <p class="punition">💥 L'ordinateur doit: ${rules.punition}</p>
+            `;
         } else {
-            message += `💥 ${gameRules.pong.defaite} - ${gameRules.pong.punition}`;
+            message += `💥 ${rules.defaite}`;
+            document.getElementById('resultat-pong').innerHTML = `
+                <h3>${message}</h3>
+                <p class="punition">💥 Vous devez: ${rules.punition}</p>
+            `;
         }
-        document.getElementById('resultat-pong').textContent = message;
-        document.removeEventListener('keydown', handlePongKeyPress);
     } else {
+        // Nouvelle manche
         pongGame.playerScore = 0;
         pongGame.computerScore = 0;
         document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
         document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
         resetPongBall();
+        
+        // Redémarrer le jeu après un délai
+        setTimeout(() => {
+            pongGame.gameLoop = setInterval(updatePong, 1000 / 60);
+        }, 1000);
     }
 }
 

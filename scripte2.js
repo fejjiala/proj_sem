@@ -1,3 +1,35 @@
+function createParticles() {
+    const container = document.getElementById('particles-container');
+    if (!container) return;
+    
+    for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        // Tailles aléatoires
+        const size = Math.random() * 5 + 2;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        
+        // Positions aléatoires
+        particle.style.left = `${Math.random() * 100}%`;
+        
+        // Animation aléatoire
+        const duration = Math.random() * 20 + 10;
+        const delay = Math.random() * 5;
+        particle.style.animationDuration = `${duration}s`;
+        particle.style.animationDelay = `${delay}s`;
+        
+        container.appendChild(particle);
+    }
+}
+
+// Appeler la fonction au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    createParticles();
+    initializeApp();
+    updateStats();
+});
 // Variables globales
 let currentGameType = '';
 let currentGameMode = 'computer';
@@ -26,6 +58,7 @@ let gameRules = {
 let gameBoard = [];
 let currentPlayer = 'X';
 
+// Variables spécifiques au Snake
 let snakeGame = {
     canvas: null,
     ctx: null,
@@ -35,7 +68,11 @@ let snakeGame = {
     gridSize: 20,
     score: 0,
     gameLoop: null,
-    isInitialized: false
+    gameStarted: false,
+    gameOver: false,
+    timer: 0,
+    timerInterval: null,
+    timerLimit: 120
 };
 
 let pongGame = {
@@ -1247,7 +1284,7 @@ function endMotsGame(hasWon) {
 }
 
 // =============================
-// JEU SNAKE (CORRIGÉ)
+// JEU SNAKE (CORRIGÉ COMPLÈTEMENT)
 // =============================
 function initializeSnake() {
     const canvas = document.getElementById('snake-canvas');
@@ -1256,30 +1293,150 @@ function initializeSnake() {
     // Arrêter le jeu précédent s'il existe
     if (snakeGame.gameLoop) {
         clearInterval(snakeGame.gameLoop);
+        clearInterval(snakeGame.timerInterval);
         document.removeEventListener('keydown', handleSnakeKeyPress);
     }
     
-    // Réinitialiser le jeu
+    // Réinitialiser complètement le jeu
     snakeGame.canvas = canvas;
     snakeGame.ctx = ctx;
     snakeGame.snake = [{x: 10, y: 10}];
     snakeGame.direction = 'right';
+    snakeGame.food = {x: 15, y: 15};
     snakeGame.score = 0;
-    snakeGame.isInitialized = true;
+    snakeGame.gameLoop = null;
+    snakeGame.gameStarted = false;
+    snakeGame.gameOver = false;
+    snakeGame.timer = 0;
+    snakeGame.timerInterval = null;
     
-    generateSnakeFood();
+    // Réinitialiser l'affichage
+    document.getElementById('snake-score').textContent = '0';
+    document.getElementById('snake-length').textContent = '1';
+    document.getElementById('resultat-snake').innerHTML = '';
     
-    document.getElementById('snake-score').textContent = snakeGame.score;
-    document.getElementById('snake-length').textContent = snakeGame.snake.length;
-    document.getElementById('resultat-snake').textContent = '';
+    // Créer ou mettre à jour l'élément timer
+    let timerElement = document.getElementById('snake-timer');
+    if (!timerElement) {
+        timerElement = document.createElement('div');
+        timerElement.id = 'snake-timer';
+        timerElement.className = 'timer-display';
+        document.querySelector('#jeu-snake .game-info').prepend(timerElement);
+    }
+    timerElement.textContent = 'Temps: 00:00';
     
-    // Réinitialiser les écouteurs d'événements pour les boutons
+    // Créer l'écran de démarrage
+    createSnakeStartScreen();
+    
+    // Dessiner l'état initial
+    drawSnake();
+    
+    // Désactiver les contrôles au début
+    disableSnakeControls();
+}
+
+function createSnakeStartScreen() {
+    // Supprimer l'écran existant
+    const existingScreen = document.getElementById('snake-start-screen');
+    if (existingScreen) {
+        existingScreen.remove();
+    }
+    
+    // Créer un nouvel écran de démarrage
+    const startScreen = document.createElement('div');
+    startScreen.id = 'snake-start-screen';
+    startScreen.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        z-index: 100;
+        min-width: 300px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    `;
+    
+    const rules = gameRules.snake;
+    startScreen.innerHTML = `
+        <h2 style="color: #4ecdc4; margin-bottom: 20px;">🐍 Jeu du Serpent</h2>
+        <p style="margin-bottom: 15px;"><strong>Objectif :</strong> Atteindre ${rules.scoreGoal || 50} points</p>
+        <p style="margin-bottom: 15px;"><strong>Contrôles :</strong> Flèches directionnelles ou boutons</p>
+        <p style="margin-bottom: 20px;"><strong>Pénalité :</strong> ${rules.punition || "Faire 20 sauts"}</p>
+        <p style="margin-bottom: 25px; color: #ff9f43;"><strong>⏱️ Temps limite : 2 minutes</strong></p>
+        <button id="start-snake-game-btn" style="
+            background: linear-gradient(135deg, #4ecdc4 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        ">
+            🎮 Commencer le jeu
+        </button>
+    `;
+    
+    document.querySelector('.snake-container').appendChild(startScreen);
+    
+    // Ajouter l'événement au bouton de démarrage
+    document.getElementById('start-snake-game-btn').addEventListener('click', startSnakeGame);
+}
+
+function startSnakeGame() {
+    // Masquer l'écran de démarrage
+    const startScreen = document.getElementById('snake-start-screen');
+    if (startScreen) {
+        startScreen.style.display = 'none';
+    }
+    
+    // Supprimer l'écran de fin s'il existe
+    const gameOverScreen = document.getElementById('snake-game-over');
+    if (gameOverScreen) {
+        gameOverScreen.remove();
+    }
+    
+    // Réinitialiser le jeu
+    snakeGame.snake = [{x: 10, y: 10}];
+    snakeGame.direction = 'right';
+    snakeGame.food = {x: 15, y: 15};
+    snakeGame.score = 0;
+    snakeGame.gameStarted = true;
+    snakeGame.gameOver = false;
+    snakeGame.timer = 0;
+    
+    // Mettre à jour l'affichage
+    document.getElementById('snake-score').textContent = '0';
+    document.getElementById('snake-length').textContent = '1';
+    document.getElementById('resultat-snake').innerHTML = '';
+    
+    // Activer les contrôles
+    enableSnakeControls();
+    
+    // Ajouter les écouteurs d'événements
+    setupSnakeControls();
+    
+    // Démarrer le timer
+    startSnakeTimer();
+    
+    // Démarrer la boucle de jeu
+    const speed = 1000 / (gameRules.snake.vitesse * 10);
+    if (snakeGame.gameLoop) clearInterval(snakeGame.gameLoop);
+    snakeGame.gameLoop = setInterval(updateSnake, speed);
+}
+
+function setupSnakeControls() {
+    // Configurer les boutons tactiles
     const upBtn = document.getElementById('up');
     const downBtn = document.getElementById('down');
     const leftBtn = document.getElementById('left');
     const rightBtn = document.getElementById('right');
     
-    // Supprimer les anciens écouteurs
     if (upBtn) {
         upBtn.onclick = null;
         upBtn.addEventListener('click', () => changeSnakeDirection('up'));
@@ -1298,18 +1455,34 @@ function initializeSnake() {
     }
     
     // Ajouter l'écouteur clavier
+    document.removeEventListener('keydown', handleSnakeKeyPress);
     document.addEventListener('keydown', handleSnakeKeyPress);
-    
-    // Démarrer le jeu
-    const speed = 1000 / (gameRules.snake.vitesse * 10);
-    snakeGame.gameLoop = setInterval(updateSnake, speed);
-    
-    // Dessiner immédiatement
-    drawSnake();
+}
+
+function enableSnakeControls() {
+    const controls = ['up', 'down', 'left', 'right'];
+    controls.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+        }
+    });
+}
+
+function disableSnakeControls() {
+    const controls = ['up', 'down', 'left', 'right'];
+    controls.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.5';
+        }
+    });
 }
 
 function handleSnakeKeyPress(e) {
-    if (currentGameType !== 'snake' || !snakeGame.gameLoop) return;
+    if (!snakeGame.gameStarted || snakeGame.gameOver || currentGameType !== 'snake') return;
     
     switch(e.key) {
         case 'ArrowUp': changeSnakeDirection('up'); break;
@@ -1320,7 +1493,7 @@ function handleSnakeKeyPress(e) {
 }
 
 function changeSnakeDirection(newDirection) {
-    if (!snakeGame.gameLoop) return;
+    if (!snakeGame.gameStarted || snakeGame.gameOver) return;
     
     const opposites = {up: 'down', down: 'up', left: 'right', right: 'left'};
     if (newDirection !== opposites[snakeGame.direction]) {
@@ -1328,14 +1501,59 @@ function changeSnakeDirection(newDirection) {
     }
 }
 
+function startSnakeTimer() {
+    if (snakeGame.timerInterval) clearInterval(snakeGame.timerInterval);
+    
+    snakeGame.timerInterval = setInterval(() => {
+        if (!snakeGame.gameStarted || snakeGame.gameOver) return;
+        
+        snakeGame.timer++;
+        updateSnakeTimerDisplay();
+        
+        // Vérifier si le temps est écoulé (2 minutes = 120 secondes)
+        if (snakeGame.timer >= 120) {
+            endSnakeGame("⏰ Temps écoulé !");
+        }
+    }, 1000);
+}
+
+function updateSnakeTimerDisplay() {
+    const timerElement = document.getElementById('snake-timer');
+    if (!timerElement) return;
+    
+    const minutes = Math.floor(snakeGame.timer / 60);
+    const seconds = snakeGame.timer % 60;
+    const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    timerElement.textContent = `⏱️ ${timeString}`;
+    
+    // Changer la couleur selon le temps restant
+    const timeLeft = 120 - snakeGame.timer;
+    if (timeLeft <= 30) {
+        timerElement.style.color = '#ff9f43';
+        if (timeLeft <= 10) {
+            timerElement.style.color = '#ff6b6b';
+            timerElement.style.animation = 'blink 1s infinite';
+        }
+    }
+}
+
 function generateSnakeFood() {
     const x = Math.floor(Math.random() * (snakeGame.canvas.width / snakeGame.gridSize));
     const y = Math.floor(Math.random() * (snakeGame.canvas.height / snakeGame.gridSize));
+    
+    // Vérifier que la nourriture n'apparaît pas sur le serpent
+    for (let segment of snakeGame.snake) {
+        if (segment.x === x && segment.y === y) {
+            return generateSnakeFood(); // Réessayer
+        }
+    }
+    
     snakeGame.food = {x, y};
 }
 
 function updateSnake() {
-    if (!snakeGame.gameLoop) return;
+    if (!snakeGame.gameStarted || snakeGame.gameOver) return;
     
     const head = {...snakeGame.snake[0]};
     
@@ -1349,14 +1567,14 @@ function updateSnake() {
     // Vérifier les collisions avec les murs
     if (head.x < 0 || head.x >= snakeGame.canvas.width / snakeGame.gridSize ||
         head.y < 0 || head.y >= snakeGame.canvas.height / snakeGame.gridSize) {
-        endSnakeGame();
+        endSnakeGame("💥 Le serpent a touché un mur !");
         return;
     }
     
     // Vérifier les collisions avec soi-même
-    for (let segment of snakeGame.snake) {
-        if (head.x === segment.x && head.y === segment.y) {
-            endSnakeGame();
+    for (let i = 1; i < snakeGame.snake.length; i++) {
+        if (head.x === snakeGame.snake[i].x && head.y === snakeGame.snake[i].y) {
+            endSnakeGame("💥 Le serpent s'est mordu la queue !");
             return;
         }
     }
@@ -1372,13 +1590,11 @@ function updateSnake() {
         
         // Vérifier la victoire
         if (snakeGame.score >= (gameRules.snake.scoreGoal || 50)) {
-            clearInterval(snakeGame.gameLoop);
-            const rules = gameRules.snake;
-            document.getElementById('resultat-snake').innerHTML = `
-                <h3>🎉 Félicitations! ${rules.victoire}</h3>
-                <p class="punition">💥 Vous avez évité la punition!</p>
-            `;
-            document.removeEventListener('keydown', handleSnakeKeyPress);
+            const minutes = Math.floor(snakeGame.timer / 60);
+            const seconds = snakeGame.timer % 60;
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            endSnakeGame(`🎉 Victoire ! ${gameRules.snake.victoire || "Vous avez atteint l'objectif !"}`, true);
             return;
         }
     } else {
@@ -1416,27 +1632,27 @@ function drawSnake() {
     }
     
     // Dessiner le serpent
-    ctx.fillStyle = '#4ecdc4';
-    for (let segment of snakeGame.snake) {
-        ctx.fillRect(
-            segment.x * snakeGame.gridSize,
-            segment.y * snakeGame.gridSize,
-            snakeGame.gridSize - 2,
-            snakeGame.gridSize - 2
-        );
-    }
-    
-    // Dessiner la tête du serpent
-    if (snakeGame.snake.length > 0) {
-        const head = snakeGame.snake[0];
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillRect(
-            head.x * snakeGame.gridSize,
-            head.y * snakeGame.gridSize,
-            snakeGame.gridSize - 2,
-            snakeGame.gridSize - 2
-        );
-    }
+    snakeGame.snake.forEach((segment, index) => {
+        if (index === 0) {
+            // Tête du serpent
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(
+                segment.x * snakeGame.gridSize,
+                segment.y * snakeGame.gridSize,
+                snakeGame.gridSize - 2,
+                snakeGame.gridSize - 2
+            );
+        } else {
+            // Corps du serpent
+            ctx.fillStyle = '#4ecdc4';
+            ctx.fillRect(
+                segment.x * snakeGame.gridSize,
+                segment.y * snakeGame.gridSize,
+                snakeGame.gridSize - 2,
+                snakeGame.gridSize - 2
+            );
+        }
+    });
     
     // Dessiner la nourriture
     ctx.fillStyle = '#ff6b6b';
@@ -1451,17 +1667,112 @@ function drawSnake() {
     ctx.fill();
 }
 
-function endSnakeGame() {
+function endSnakeGame(message, isVictory = false) {
+    if (snakeGame.gameOver) return;
+    
+    snakeGame.gameOver = true;
+    snakeGame.gameStarted = false;
+    
     if (snakeGame.gameLoop) {
         clearInterval(snakeGame.gameLoop);
         snakeGame.gameLoop = null;
     }
-    const rules = gameRules.snake;
-    document.getElementById('resultat-snake').innerHTML = `
-        <h3>💥 Game Over! ${rules.defaite}</h3>
-        <p class="punition">💥 Vous devez: ${rules.punition}</p>
-    `;
+    
+    if (snakeGame.timerInterval) {
+        clearInterval(snakeGame.timerInterval);
+        snakeGame.timerInterval = null;
+    }
+    
+    // Désactiver les contrôles
+    disableSnakeControls();
+    
+    // Retirer l'écouteur clavier
     document.removeEventListener('keydown', handleSnakeKeyPress);
+    
+    const rules = gameRules.snake;
+    const minutes = Math.floor(snakeGame.timer / 60);
+    const seconds = snakeGame.timer % 60;
+    const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    // Afficher l'écran de fin de jeu
+    createSnakeGameOverScreen(message, isVictory, timeString);
+}
+
+function createSnakeGameOverScreen(message, isVictory, timeString) {
+    // Créer l'écran de fin de jeu
+    const gameOverScreen = document.createElement('div');
+    gameOverScreen.id = 'snake-game-over';
+    gameOverScreen.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        z-index: 200;
+        min-width: 300px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    `;
+    
+    const rules = gameRules.snake;
+    let punishmentText = '';
+    
+    if (!isVictory && rules.punition) {
+        punishmentText = `<div style="
+            background: rgba(255, 107, 107, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ff6b6b;
+        ">
+            💥 Vous devez: ${rules.punition}
+        </div>`;
+    } else if (isVictory) {
+        punishmentText = `<div style="
+            background: rgba(78, 205, 196, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #4ecdc4;
+        ">
+            🎉 Vous avez évité la punition !
+        </div>`;
+    }
+    
+    gameOverScreen.innerHTML = `
+        <h2 style="color: ${isVictory ? '#4ecdc4' : '#ff6b6b'}; margin-bottom: 20px;">
+            ${isVictory ? '🎉 VICTOIRE !' : '💥 GAME OVER'}
+        </h2>
+        <p style="margin-bottom: 15px; font-size: 1.1em;">${message}</p>
+        <p style="margin-bottom: 10px;"><strong>Score final :</strong> ${snakeGame.score} points</p>
+        <p style="margin-bottom: 10px;"><strong>Longueur :</strong> ${snakeGame.snake.length}</p>
+        <p style="margin-bottom: 20px;"><strong>Temps :</strong> ${timeString}</p>
+        ${punishmentText}
+        <button id="restart-snake-game-btn" style="
+            background: linear-gradient(135deg, #4ecdc4 0%, #2ecc71 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        ">
+            🔄 Rejouer
+        </button>
+    `;
+    
+    document.querySelector('.snake-container').appendChild(gameOverScreen);
+    
+    // Ajouter l'événement au bouton de redémarrage
+    document.getElementById('restart-snake-game-btn').addEventListener('click', () => {
+        gameOverScreen.remove();
+        initializeSnake();
+    });
 }
 
 // =============================
