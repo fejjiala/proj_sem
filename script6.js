@@ -1,4 +1,6 @@
-// Variables globales
+// =============================
+// VARIABLES GLOBALES
+// =============================
 let currentGameType = '';
 let currentGameMode = 'computer';
 let gameActive = true;
@@ -16,7 +18,7 @@ let gameRules = {
     quiz: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
     dice: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
     mots: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", mots: "", gridSize: 10, timer: 60 },
-    snake: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", vitesse: 5, scoreGoal: 50 },
+    snake: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", vitesse: 120, scoreGoal: 50 },
     action: { regles: "", victoire: "", defaite: "", manches: 10, punition: "", actions: "", verites: "", timePerQuestion: 10 },
     calcul: { regles: "", victoire: "", defaite: "", manches: 10, punition: "", niveau: "facile", timePerQuestion: 10 },
     pong: { regles: "", victoire: "", defaite: "", manches: 3, punition: "", vitesse: 5, pointsToWin: 5 }
@@ -26,7 +28,7 @@ let gameRules = {
 let gameBoard = [];
 let currentPlayer = 'X';
 
-// Variables spécifiques au Snake
+// Variables spécifiques au Snake (corrigé)
 let snakeGame = {
     canvas: null,
     ctx: null,
@@ -40,7 +42,8 @@ let snakeGame = {
     gameOver: false,
     timer: 0,
     timerInterval: null,
-    timerLimit: 120
+    timerLimit: 120,
+    speed: 120 // Vitesse en millisecondes
 };
 
 let pongGame = {
@@ -85,48 +88,50 @@ let quizQuestions = [
     {
         question: "Quelle est la capitale de la France?",
         options: ["Londres", "Berlin", "Paris", "Madrid"],
-        answer: 3
+        answer: 2
     },
     {
         question: "Combien de côtés a un hexagone?",
         options: ["4", "5", "6", "7"],
-        answer: 3
+        answer: 2
     },
     {
         question: "Quel est le plus grand mammifère du monde?",
         options: ["Éléphant", "Girafe", "Baleine bleue", "Rhinocéros"],
-        answer: 3
+        answer: 2
     },
     {
         question: "Qui a peint la Joconde?",
         options: ["Van Gogh", "Picasso", "Léonard de Vinci", "Michel-Ange"],
-        answer: 3
+        answer: 2
     },
     {
         question: "Quel est le symbole chimique de l'or?",
         options: ["Ag", "Fe", "Au", "Cu"],
-        answer: 3
+        answer: 2
     }
 ];
+
+// =============================
+// FONCTIONS GÉNÉRALES
+// =============================
 
 // Fonction pour créer des particules
 function createParticles() {
     const container = document.getElementById('particles-container');
     if (!container) return;
     
+    container.innerHTML = '';
+    
     for (let i = 0; i < 50; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
         
-        // Tailles aléatoires
         const size = Math.random() * 5 + 2;
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
-        
-        // Positions aléatoires
         particle.style.left = `${Math.random() * 100}%`;
         
-        // Animation aléatoire
         const duration = Math.random() * 20 + 10;
         const delay = Math.random() * 5;
         particle.style.animationDuration = `${duration}s`;
@@ -141,8 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
     createParticles();
     initializeApp();
     updateStats();
-    
-    // Vérifier si l'utilisateur est déjà connecté
     checkUserLogin();
 });
 
@@ -155,6 +158,23 @@ function checkUserLogin() {
     }
 }
 
+// Mettre à jour l'interface après connexion
+function updateUserInterface(username) {
+    const btnSignin = document.getElementById('btn-signin');
+    if (!btnSignin) return;
+    
+    btnSignin.innerHTML = `
+        <span>👤 ${username}</span>
+        <div class="user-menu">
+            <a href="#" onclick="showUserProfile()">Profil</a>
+            <a href="#" onclick="showUserGames()">Mes jeux</a>
+            <a href="#" onclick="logout()">Déconnexion</a>
+        </div>
+    `;
+    btnSignin.classList.add('logged-in');
+}
+
+// Initialiser l'application
 function initializeApp() {
     // Navigation entre les pages
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -167,38 +187,58 @@ function initializeApp() {
         });
     });
 
-     // Bouton "Create a game" (nouveau bouton)
-    document.getElementById('btn-create-game').addEventListener('click', function() {
-        showPage('choix');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        document.querySelector('[data-page="choix"]').classList.add('active');
-    });
+    // Bouton "Create a game"
+    const btnCreateGame = document.getElementById('btn-create-game');
+    if (btnCreateGame) {
+        btnCreateGame.addEventListener('click', function() {
+            showPage('choix');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const choixLink = document.querySelector('[data-page="choix"]');
+            if (choixLink) choixLink.classList.add('active');
+        });
+    }
 
     // Bouton "Créer un jeu"
-    document.getElementById('btn-creer').addEventListener('click', function() {
-        showPage('choix');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        document.querySelector('[data-page="choix"]').classList.add('active');
-    });
+    const btnCreer = document.getElementById('btn-creer');
+    if (btnCreer) {
+        btnCreer.addEventListener('click', function() {
+            showPage('choix');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const choixLink = document.querySelector('[data-page="choix"]');
+            if (choixLink) choixLink.classList.add('active');
+        });
+    }
 
     // Boutons de retour
-    document.getElementById('btn-retour-choix').addEventListener('click', function() {
-        showPage('accueil');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        document.querySelector('[data-page="accueil"]').classList.add('active');
-    });
+    const btnRetourChoix = document.getElementById('btn-retour-choix');
+    if (btnRetourChoix) {
+        btnRetourChoix.addEventListener('click', function() {
+            showPage('accueil');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const accueilLink = document.querySelector('[data-page="accueil"]');
+            if (accueilLink) accueilLink.classList.add('active');
+        });
+    }
 
-    document.getElementById('btn-retour-perso').addEventListener('click', function() {
-        showPage('choix');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        document.querySelector('[data-page="choix"]').classList.add('active');
-    });
+    const btnRetourPerso = document.getElementById('btn-retour-perso');
+    if (btnRetourPerso) {
+        btnRetourPerso.addEventListener('click', function() {
+            showPage('choix');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const choixLink = document.querySelector('[data-page="choix"]');
+            if (choixLink) choixLink.classList.add('active');
+        });
+    }
 
-    document.getElementById('btn-retour-jeu').addEventListener('click', function() {
-        showPage('choix');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        document.querySelector('[data-page="choix"]').classList.add('active');
-    });
+    const btnRetourJeu = document.getElementById('btn-retour-jeu');
+    if (btnRetourJeu) {
+        btnRetourJeu.addEventListener('click', function() {
+            showPage('choix');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const choixLink = document.querySelector('[data-page="choix"]');
+            if (choixLink) choixLink.classList.add('active');
+        });
+    }
 
     // Sélection du type de jeu
     document.querySelectorAll('.game-card').forEach(card => {
@@ -207,85 +247,128 @@ function initializeApp() {
             prefillCustomizationFields(currentGameType);
             showPage('personnalisation');
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.querySelector('[data-page="personnalisation"]').classList.add('active');
+            const persoLink = document.querySelector('[data-page="personnalisation"]');
+            if (persoLink) persoLink.classList.add('active');
         });
     });
 
     // Génération du jeu
-    document.getElementById('btn-generer').addEventListener('click', function() {
-        generateGame();
-    });
+    const btnGenerer = document.getElementById('btn-generer');
+    if (btnGenerer) {
+        btnGenerer.addEventListener('click', generateGame);
+    }
 
     // Bouton Rejouer
-    document.getElementById('btn-rejouer').addEventListener('click', function() {
-        initializeGame(currentGameType);
-    });
+    const btnRejouer = document.getElementById('btn-rejouer');
+    if (btnRejouer) {
+        btnRejouer.addEventListener('click', function() {
+            if (currentGameType) {
+                initializeGame(currentGameType);
+            }
+        });
+    }
 
-    // Gestion du bouton Sign In
-    document.getElementById('btn-signin').addEventListener('click', openLoginModal);
-    
-    // Gestion du modal
+    // Gestion du modal de connexion
+    setupLoginModal();
+}
+
+// Configuration du modal de connexion
+function setupLoginModal() {
     const modal = document.getElementById('loginModal');
+    if (!modal) return;
+
     const closeModal = document.getElementById('closeModal');
     const showSignup = document.getElementById('showSignup');
     const showLogin = document.getElementById('showLogin');
     
-    closeModal.addEventListener('click', closeLoginModal);
+    const btnSignin = document.getElementById('btn-signin');
+    if (btnSignin && !btnSignin.classList.contains('logged-in')) {
+        btnSignin.addEventListener('click', openLoginModal);
+    }
     
-    // Fermer le modal en cliquant en dehors
+    if (closeModal) {
+        closeModal.addEventListener('click', closeLoginModal);
+    }
+    
     window.addEventListener('click', function(event) {
         if (event.target === modal) {
             closeLoginModal();
         }
     });
     
-    // Navigation entre login et signup
-    showSignup.addEventListener('click', function(e) {
-        e.preventDefault();
-        showSignupForm();
-    });
+    if (showSignup) {
+        showSignup.addEventListener('click', function(e) {
+            e.preventDefault();
+            showSignupForm();
+        });
+    }
     
-    showLogin.addEventListener('click', function(e) {
-        e.preventDefault();
-        showLoginForm();
-    });
+    if (showLogin) {
+        showLogin.addEventListener('click', function(e) {
+            e.preventDefault();
+            showLoginForm();
+        });
+    }
     
-    // Gestion des formulaires
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    document.getElementById('signupForm').addEventListener('submit', handleSignup);
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+    
+    const signupForm = document.getElementById('signupForm');
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleSignup);
+    }
 }
 
 // Fonctions pour le modal
 function openLoginModal() {
     const modal = document.getElementById('loginModal');
-    modal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 function closeLoginModal() {
     const modal = document.getElementById('loginModal');
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-    resetForms();
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        resetForms();
+    }
 }
 
 function showSignupForm() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('signupForm').style.display = 'block';
-    document.querySelector('.modal-header h2').textContent = '👤 Inscription';
-    document.querySelector('.modal-header p').textContent = 'Créez votre compte pour sauvegarder vos jeux';
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const modalHeader = document.querySelector('.modal-header h2');
+    const modalSubtitle = document.querySelector('.modal-header p');
+    
+    if (loginForm) loginForm.style.display = 'none';
+    if (signupForm) signupForm.style.display = 'block';
+    if (modalHeader) modalHeader.textContent = '👤 Inscription';
+    if (modalSubtitle) modalSubtitle.textContent = 'Créez votre compte pour sauvegarder vos jeux';
 }
 
 function showLoginForm() {
-    document.getElementById('signupForm').style.display = 'none';
-    document.getElementById('loginForm').style.display = 'block';
-    document.querySelector('.modal-header h2').textContent = '🔐 Connexion';
-    document.querySelector('.modal-header p').textContent = 'Connectez-vous pour sauvegarder vos jeux et scores';
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const modalHeader = document.querySelector('.modal-header h2');
+    const modalSubtitle = document.querySelector('.modal-header p');
+    
+    if (signupForm) signupForm.style.display = 'none';
+    if (loginForm) loginForm.style.display = 'block';
+    if (modalHeader) modalHeader.textContent = '🔐 Connexion';
+    if (modalSubtitle) modalSubtitle.textContent = 'Connectez-vous pour sauvegarder vos jeux et scores';
 }
 
 function resetForms() {
-    document.getElementById('loginForm').reset();
-    document.getElementById('signupForm').reset();
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    
+    if (loginForm) loginForm.reset();
+    if (signupForm) signupForm.reset();
     showLoginForm();
 }
 
@@ -297,28 +380,19 @@ function handleLogin(event) {
     const password = document.getElementById('loginPassword').value;
     const rememberMe = document.getElementById('rememberMe').checked;
     
-    // Animation de chargement
     const submitBtn = event.target.querySelector('.btn-modal');
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Connexion...';
     submitBtn.disabled = true;
     
-    // Simulation d'une connexion
     setTimeout(() => {
-        // Exemple de validation
         if (email && password) {
-            // Sauvegarde dans localStorage si "Se souvenir de moi"
             if (rememberMe) {
                 localStorage.setItem('userEmail', email);
             }
             
-            // Mettre à jour l'interface
             updateUserInterface(email.split('@')[0]);
-            
-            // Fermer le modal
             closeLoginModal();
-            
-            // Afficher un message de succès
             showNotification('Connexion réussie ! Bienvenue !', 'success');
         } else {
             showNotification('Veuillez remplir tous les champs', 'error');
@@ -338,7 +412,6 @@ function handleSignup(event) {
     const password = document.getElementById('signupPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     
-    // Validation
     if (password !== confirmPassword) {
         showNotification('Les mots de passe ne correspondent pas', 'error');
         return;
@@ -349,15 +422,12 @@ function handleSignup(event) {
         return;
     }
     
-    // Animation de chargement
     const submitBtn = event.target.querySelector('.btn-modal');
     const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Inscription...';
     submitBtn.disabled = true;
     
-    // Simulation d'inscription
     setTimeout(() => {
-        // Sauvegarde dans localStorage
         const userData = {
             username: username,
             email: email,
@@ -370,36 +440,13 @@ function handleSignup(event) {
         };
         
         localStorage.setItem('userData', JSON.stringify(userData));
-        
-        // Mettre à jour l'interface
         updateUserInterface(username);
-        
-        // Fermer le modal
         closeLoginModal();
-        
-        // Afficher un message de succès
         showNotification(`Compte créé avec succès ! Bienvenue ${username} !`, 'success');
         
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     }, 1500);
-}
-
-// Mettre à jour l'interface après connexion
-function updateUserInterface(username) {
-    const btnSignin = document.getElementById('btn-signin');
-    btnSignin.innerHTML = `
-        <span>👤 ${username}</span>
-        <div class="user-menu">
-            <a href="#" onclick="showUserProfile()">Profil</a>
-            <a href="#" onclick="showUserGames()">Mes jeux</a>
-            <a href="#" onclick="logout()">Déconnexion</a>
-        </div>
-    `;
-    btnSignin.classList.add('logged-in');
-    
-    // Charger les données utilisateur
-    loadUserData();
 }
 
 // Fonctions du menu utilisateur
@@ -429,19 +476,7 @@ function showUserProfile() {
 }
 
 function showUserGames() {
-    const userData = JSON.parse(localStorage.getItem('userData'));
-    if (userData) {
-        let gamesHTML = '<h3>Mes jeux sauvegardés</h3>';
-        if (userData.games.length > 0) {
-            userData.games.forEach(game => {
-                gamesHTML += `<div class="game-item">${game.name}</div>`;
-            });
-        } else {
-            gamesHTML += '<p>Aucun jeu sauvegardé</p>';
-        }
-        
-        showNotification('Fonctionnalité à venir !', 'info');
-    }
+    showNotification('Fonctionnalité à venir !', 'info');
 }
 
 function logout() {
@@ -449,24 +484,17 @@ function logout() {
     localStorage.removeItem('userEmail');
     
     const btnSignin = document.getElementById('btn-signin');
-    btnSignin.innerHTML = 'Sign In';
-    btnSignin.classList.remove('logged-in');
+    if (btnSignin) {
+        btnSignin.innerHTML = 'Sign In';
+        btnSignin.classList.remove('logged-in');
+        btnSignin.addEventListener('click', openLoginModal);
+    }
     
     showNotification('Déconnexion réussie', 'success');
 }
 
-function loadUserData() {
-    // Charger les données utilisateur si besoin
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-        return JSON.parse(userData);
-    }
-    return null;
-}
-
 // Fonction pour afficher les notifications
 function showNotification(message, type = 'info') {
-    // Supprimer les notifications existantes
     document.querySelectorAll('.notification').forEach(n => n.remove());
     
     const notification = document.createElement('div');
@@ -522,10 +550,18 @@ function updateStats() {
         gamesPlayed: 0
     };
     
-    document.getElementById('games-count').textContent = stats.gamesCreated + 128;
-    document.getElementById('players-count').textContent = stats.playersActive + 567;
-    document.getElementById('games-played').textContent = stats.gamesPlayed + 892;
+    const gamesCount = document.getElementById('games-count');
+    const playersCount = document.getElementById('players-count');
+    const gamesPlayed = document.getElementById('games-played');
+    
+    if (gamesCount) gamesCount.textContent = stats.gamesCreated + 128;
+    if (playersCount) playersCount.textContent = stats.playersActive + 567;
+    if (gamesPlayed) gamesPlayed.textContent = stats.gamesPlayed + 892;
 }
+
+// =============================
+// PERSONNALISATION DES JEUX
+// =============================
 
 // Pré-remplir les champs selon le jeu
 function prefillCustomizationFields(gameType) {
@@ -572,7 +608,7 @@ function prefillCustomizationFields(gameType) {
             defaite: "Le serpent se mord la queue ou touche un mur",
             manches: 1,
             punition: "Faire 20 sauts",
-            vitesse: 5
+            vitesse: 120
         },
         'action': {
             regles: "Choisissez entre Action ou Vérité à chaque tour. Les Actions sont des défis à réaliser, les Vérités sont des questions auxquelles vous devez répondre honnêtement.",
@@ -585,7 +621,7 @@ function prefillCustomizationFields(gameType) {
         },
         'calcul': {
             regles: "Résolvez les opérations mathématiques le plus rapidement possible. Vous avez 10 secondes par question.",
-            victoire: "Obtenir un score de 8/10 ou plus",
+            victoire: "Obtenir un score de 8/10 ou mais",
             defaite: "Obtenir un score inférieur à 8/10",
             manches: 10,
             punition: "Résoudre 10 opérations supplémentaires",
@@ -604,13 +640,18 @@ function prefillCustomizationFields(gameType) {
     const currentRules = gameRules[gameType];
     const defaultValues = defaults[gameType] || {};
     
-    document.getElementById('regles').value = currentRules.regles || defaultValues.regles || "";
-    document.getElementById('victoire').value = currentRules.victoire || defaultValues.victoire || "";
-    document.getElementById('defaite').value = currentRules.defaite || defaultValues.defaite || "";
-    document.getElementById('manches').value = currentRules.manches || defaultValues.manches || 1;
-    document.getElementById('punition').value = currentRules.punition || defaultValues.punition || "";
+    const reglesInput = document.getElementById('regles');
+    const victoireInput = document.getElementById('victoire');
+    const defaiteInput = document.getElementById('defaite');
+    const manchesInput = document.getElementById('manches');
+    const punitionInput = document.getElementById('punition');
     
-    // Définir le mode par défaut selon le jeu
+    if (reglesInput) reglesInput.value = currentRules.regles || defaultValues.regles || "";
+    if (victoireInput) victoireInput.value = currentRules.victoire || defaultValues.victoire || "";
+    if (defaiteInput) defaiteInput.value = currentRules.defaite || defaultValues.defaite || "";
+    if (manchesInput) manchesInput.value = currentRules.manches || defaultValues.manches || 1;
+    if (punitionInput) punitionInput.value = currentRules.punition || defaultValues.punition || "";
+    
     const defaultModes = {
         'xo': 'computer',
         'pfc': 'computer', 
@@ -623,9 +664,11 @@ function prefillCustomizationFields(gameType) {
         'pong': 'computer'
     };
     
-    document.getElementById('game-mode').value = defaultModes[gameType] || 'computer';
+    const gameModeSelect = document.getElementById('game-mode');
+    if (gameModeSelect) {
+        gameModeSelect.value = defaultModes[gameType] || 'computer';
+    }
     
-    // Mettre à jour le titre
     const gameTitles = {
         'xo': 'Tic Tac Toe',
         'pfc': 'Pierre-Papier-Ciseaux',
@@ -638,15 +681,19 @@ function prefillCustomizationFields(gameType) {
         'pong': 'Ping Pong'
     };
     
-    document.getElementById('current-game-title').textContent = `Personnalisation du jeu : ${gameTitles[gameType]}`;
+    const currentGameTitle = document.getElementById('current-game-title');
+    if (currentGameTitle) {
+        currentGameTitle.textContent = `Personnalisation du jeu : ${gameTitles[gameType]}`;
+    }
     
-    // Ajouter les champs spécifiques au jeu
     addSpecificFields(gameType, defaultValues);
 }
 
 // Ajouter des champs spécifiques selon le jeu
 function addSpecificFields(gameType, defaultValues) {
     const container = document.getElementById('jeu-specific-fields');
+    if (!container) return;
+    
     container.innerHTML = '';
     
     switch(gameType) {
@@ -677,10 +724,10 @@ function addSpecificFields(gameType, defaultValues) {
                 <div class="form-group">
                     <label for="snake-speed">Vitesse du serpent :</label>
                     <select id="snake-speed">
-                        <option value="3">Lent</option>
-                        <option value="5" selected>Normal</option>
-                        <option value="8">Rapide</option>
-                        <option value="10">Très rapide</option>
+                        <option value="180">Lent (Niveau 1)</option>
+                        <option value="120" selected>Moyen (Niveau 2)</option>
+                        <option value="80">Rapide (Niveau 3)</option>
+                        <option value="50">Très rapide (Niveau 4)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -764,19 +811,25 @@ function addSpecificFields(gameType, defaultValues) {
 
 // Générer le jeu
 function generateGame() {
-    // Sauvegarder le mode de jeu
-    currentGameMode = document.getElementById('game-mode').value;
+    const gameModeSelect = document.getElementById('game-mode');
+    if (gameModeSelect) {
+        currentGameMode = gameModeSelect.value;
+    }
     
-    // Sauvegarder les règles
+    const regles = document.getElementById('regles').value;
+    const victoire = document.getElementById('victoire').value;
+    const defaite = document.getElementById('defaite').value;
+    const manches = parseInt(document.getElementById('manches').value) || 1;
+    const punition = document.getElementById('punition').value;
+    
     gameRules[currentGameType] = {
-        regles: document.getElementById('regles').value,
-        victoire: document.getElementById('victoire').value,
-        defaite: document.getElementById('defaite').value,
-        manches: parseInt(document.getElementById('manches').value) || 1,
-        punition: document.getElementById('punition').value
+        regles: regles,
+        victoire: victoire,
+        defaite: defaite,
+        manches: manches,
+        punition: punition
     };
     
-    // Sauvegarder les champs spécifiques
     switch(currentGameType) {
         case 'mots':
             gameRules.mots.mots = document.getElementById('mots-list').value;
@@ -784,14 +837,14 @@ function generateGame() {
             gameRules.mots.timer = parseInt(document.getElementById('mots-timer').value) || 60;
             break;
         case 'snake':
-            gameRules.snake.vitesse = parseInt(document.getElementById('snake-speed').value);
+            const vitesseSelect = parseInt(document.getElementById('snake-speed').value);
+            gameRules.snake.vitesse = vitesseSelect;
             gameRules.snake.scoreGoal = parseInt(document.getElementById('snake-goal').value) || 50;
             break;
         case 'action':
             gameRules.action.actions = document.getElementById('actions-list').value;
             gameRules.action.verites = document.getElementById('verites-list').value;
-            // Créer la liste des joueurs
-            const playerCount = parseInt(document.getElementById('player-count').value);
+            const playerCount = parseInt(document.getElementById('player-count').value) || 2;
             actionVerite.players = Array.from({length: playerCount}, (_, i) => `Joueur ${i + 1}`);
             break;
         case 'calcul':
@@ -808,14 +861,12 @@ function generateGame() {
             break;
     }
     
-    // Validation
     const rules = gameRules[currentGameType];
     if (!rules.regles || !rules.victoire || !rules.defaite) {
         showNotification("Veuillez remplir au moins les règles, conditions de victoire et de défaite.", "error");
         return;
     }
     
-    // Mettre à jour l'interface
     const gameTitles = {
         'xo': 'Tic Tac Toe',
         'pfc': 'Pierre-Papier-Ciseaux',
@@ -828,14 +879,16 @@ function generateGame() {
         'pong': 'Ping Pong'
     };
     
-    document.getElementById('titre-jeu').textContent = gameTitles[currentGameType] + ' Personnalisé';
+    const titreJeu = document.getElementById('titre-jeu');
+    if (titreJeu) {
+        titreJeu.textContent = gameTitles[currentGameType] + ' Personnalisé';
+    }
+    
     updateGameInterfaceWithCustomRules();
     
-    // Afficher la page du jeu
     showPage('jeu');
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     
-    // Afficher seulement le jeu sélectionné
     document.querySelectorAll('.jeu-type').forEach(jeu => {
         jeu.style.display = 'none';
     });
@@ -844,17 +897,13 @@ function generateGame() {
     if (jeuElement) {
         jeuElement.style.display = 'block';
         
-        // S'assurer que le jeu Snake est correctement initialisé
         if (currentGameType === 'snake') {
             jeuElement.style.opacity = '1';
             jeuElement.style.visibility = 'visible';
         }
     }
     
-    // Initialiser le jeu
     initializeGame(currentGameType);
-    
-    // Sauvegarder les statistiques
     saveGameStats();
 }
 
@@ -867,7 +916,10 @@ function updateGameInterfaceWithCustomRules() {
         rulesDisplay = document.createElement('div');
         rulesDisplay.id = 'regles-personnalisees';
         rulesDisplay.className = 'game-rules-display';
-        document.querySelector('.game-container').prepend(rulesDisplay);
+        const gameContainer = document.querySelector('.game-container');
+        if (gameContainer) {
+            gameContainer.prepend(rulesDisplay);
+        }
     }
     
     const modeText = currentGameMode === 'computer' ? 'Contre l\'ordinateur' : 
@@ -936,24 +988,28 @@ function initializeXO() {
     const rules = gameRules.xo;
     const gridSize = rules.gridSize || 3;
     
-    // Créer la grille
     createXOGrid(gridSize);
     
     gameBoard = Array(gridSize * gridSize).fill('');
     currentPlayer = 'X';
     gameActive = true;
     
-    document.getElementById('joueur-actuel').textContent = currentPlayer;
-    document.getElementById('manche-actuelle').textContent = currentRound;
-    document.getElementById('manches-total').textContent = rules.manches;
+    const joueurActuel = document.getElementById('joueur-actuel');
+    const mancheActuelle = document.getElementById('manche-actuelle');
+    const manchesTotal = document.getElementById('manches-total');
     
-    // Supprimer les anciens résultats
+    if (joueurActuel) joueurActuel.textContent = currentPlayer;
+    if (mancheActuelle) mancheActuelle.textContent = currentRound;
+    if (manchesTotal) manchesTotal.textContent = rules.manches;
+    
     const oldResult = document.querySelector('#jeu-xo .result');
     if (oldResult) oldResult.remove();
 }
 
 function createXOGrid(size) {
     const gameBoard = document.getElementById('xo-board');
+    if (!gameBoard) return;
+    
     gameBoard.innerHTML = '';
     gameBoard.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
     
@@ -990,9 +1046,9 @@ function handleCellClick() {
     }
     
     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    document.getElementById('joueur-actuel').textContent = currentPlayer;
+    const joueurActuel = document.getElementById('joueur-actuel');
+    if (joueurActuel) joueurActuel.textContent = currentPlayer;
     
-    // Tour de l'ordinateur si mode contre ordinateur
     if (currentGameMode === 'computer' && currentPlayer === 'O') {
         setTimeout(computerMoveXO, 500);
     }
@@ -1006,7 +1062,9 @@ function computerMoveXO() {
     if (emptyCells.length > 0) {
         const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
         const cell = document.querySelector(`#xo-board .cell[data-index="${randomIndex}"]`);
-        cell.click();
+        if (cell) {
+            cell.click();
+        }
     }
 }
 
@@ -1014,7 +1072,6 @@ function checkXOWinner() {
     const size = Math.sqrt(gameBoard.length);
     const winLength = gameRules.xo.winLength || 3;
     
-    // Vérifier les lignes
     for (let row = 0; row < size; row++) {
         for (let col = 0; col <= size - winLength; col++) {
             const first = gameBoard[row * size + col];
@@ -1026,7 +1083,6 @@ function checkXOWinner() {
         }
     }
     
-    // Vérifier les colonnes
     for (let col = 0; col < size; col++) {
         for (let row = 0; row <= size - winLength; row++) {
             const first = gameBoard[row * size + col];
@@ -1038,7 +1094,6 @@ function checkXOWinner() {
         }
     }
     
-    // Vérifier les diagonales
     for (let row = 0; row <= size - winLength; row++) {
         for (let col = 0; col <= size - winLength; col++) {
             const first = gameBoard[row * size + col];
@@ -1050,7 +1105,6 @@ function checkXOWinner() {
         }
     }
     
-    // Vérifier les anti-diagonales
     for (let row = 0; row <= size - winLength; row++) {
         for (let col = winLength - 1; col < size; col++) {
             const first = gameBoard[row * size + col];
@@ -1073,10 +1127,11 @@ function endXOGame(message, rules) {
     gameActive = false;
     
     const gameInfo = document.querySelector('#jeu-xo .game-info');
+    if (!gameInfo) return;
+    
     const resultDiv = document.createElement('div');
     resultDiv.className = 'result';
     
-    // Toujours afficher la punition à la fin du jeu
     let punishmentText = '';
     if (message.includes('gagné')) {
         punishmentText = `<p class="punition">💥 Le perdant doit: ${rules.punition}</p>`;
@@ -1091,7 +1146,6 @@ function endXOGame(message, rules) {
     
     gameInfo.appendChild(resultDiv);
     
-    // Passer à la manche suivante ou terminer
     currentRound++;
     if (currentRound <= totalRounds) {
         setTimeout(() => {
@@ -1110,13 +1164,18 @@ function initializePFC() {
     computerScore = 0;
     currentRound = 1;
     
-    document.getElementById('score-joueur').textContent = playerScore;
-    document.getElementById('score-adversaire').textContent = computerScore;
-    document.getElementById('manche-actuelle-pfc').textContent = currentRound;
-    document.getElementById('manches-total-pfc').textContent = rules.manches;
-    document.getElementById('resultat-pfc').textContent = `🎯 ${rules.victoire}`;
+    const scoreJoueur = document.getElementById('score-joueur');
+    const scoreAdversaire = document.getElementById('score-adversaire');
+    const mancheActuelle = document.getElementById('manche-actuelle-pfc');
+    const manchesTotal = document.getElementById('manches-total-pfc');
+    const resultat = document.getElementById('resultat-pfc');
     
-    // Activer les choix
+    if (scoreJoueur) scoreJoueur.textContent = playerScore;
+    if (scoreAdversaire) scoreAdversaire.textContent = computerScore;
+    if (mancheActuelle) mancheActuelle.textContent = currentRound;
+    if (manchesTotal) manchesTotal.textContent = rules.manches;
+    if (resultat) resultat.textContent = `🎯 ${rules.victoire}`;
+    
     document.querySelectorAll('.choice').forEach(c => {
         c.style.pointerEvents = 'auto';
         c.addEventListener('click', handlePFCClick);
@@ -1152,12 +1211,19 @@ function handlePFCClick() {
         computerScore++;
     }
     
-    document.getElementById('resultat-pfc').textContent = `Vous: ${playerChoice} | ${currentGameMode === 'computer' ? 'Ordinateur' : 'Adversaire'}: ${adversaryChoice} - ${result}`;
-    document.getElementById('score-joueur').textContent = playerScore;
-    document.getElementById('score-adversaire').textContent = computerScore;
+    const resultat = document.getElementById('resultat-pfc');
+    const scoreJoueur = document.getElementById('score-joueur');
+    const scoreAdversaire = document.getElementById('score-adversaire');
+    const mancheActuelle = document.getElementById('manche-actuelle-pfc');
+    
+    if (resultat) {
+        resultat.textContent = `Vous: ${playerChoice} | ${currentGameMode === 'computer' ? 'Ordinateur' : 'Adversaire'}: ${adversaryChoice} - ${result}`;
+    }
+    if (scoreJoueur) scoreJoueur.textContent = playerScore;
+    if (scoreAdversaire) scoreAdversaire.textContent = computerScore;
     
     currentRound++;
-    document.getElementById('manche-actuelle-pfc').textContent = currentRound;
+    if (mancheActuelle) mancheActuelle.textContent = currentRound;
     
     if (currentRound > rules.manches) {
         let finalResult = "Match nul!";
@@ -1172,10 +1238,12 @@ function handlePFCClick() {
         }
         
         const gameInfo = document.querySelector('#jeu-pfc .game-info');
-        const resultDiv = document.createElement('div');
-        resultDiv.className = 'result';
-        resultDiv.innerHTML = `<h3>${finalResult}</h3>${punishmentText}`;
-        gameInfo.appendChild(resultDiv);
+        if (gameInfo) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `<h3>${finalResult}</h3>${punishmentText}`;
+            gameInfo.appendChild(resultDiv);
+        }
         
         document.querySelectorAll('.choice').forEach(c => {
             c.style.pointerEvents = 'none';
@@ -1186,20 +1254,22 @@ function handlePFCClick() {
 // =============================
 // JEU QUIZ
 // =============================
-/*function initializeQuiz() {
+function initializeQuiz() {
     const rules = gameRules.quiz;
     
     quizScore = 0;
-    document.getElementById('score-quiz').textContent = quizScore;
-    document.getElementById('questions-total').textContent = rules.manches;
-    document.getElementById('resultat-quiz').textContent = `🎯 ${rules.victoire}`;
+    const scoreQuiz = document.getElementById('score-quiz');
+    const questionsTotal = document.getElementById('questions-total');
+    const resultatQuiz = document.getElementById('resultat-quiz');
     
-    // Générer des questions personnalisées si besoin
+    if (scoreQuiz) scoreQuiz.textContent = quizScore;
+    if (questionsTotal) questionsTotal.textContent = rules.manches;
+    if (resultatQuiz) resultatQuiz.textContent = `🎯 ${rules.victoire}`;
+    
     if (quizQuestions.length < rules.manches) {
         generateCustomQuizQuestions(rules.manches);
     }
     
-    // Activer les options
     document.querySelectorAll('.quiz-option').forEach(opt => {
         opt.style.pointerEvents = 'auto';
         opt.addEventListener('click', handleQuizClick);
@@ -1221,7 +1291,7 @@ function generateCustomQuizQuestions(count) {
         quizQuestions.push({
             question: questionTemplates[Math.floor(Math.random() * questionTemplates.length)].replace('#NUM', i + 1),
             options: ["Option A", "Option B", "Option C", "Option D"],
-            answer: Math.floor(Math.random() * 4) + 1
+            answer: Math.floor(Math.random() * 4)
         });
     }
 }
@@ -1235,11 +1305,16 @@ function showQuestion() {
     }
     
     const question = quizQuestions[currentIndex];
-    document.getElementById('question-quiz').textContent = question.question;
+    const questionElement = document.getElementById('question-quiz');
+    if (questionElement) {
+        questionElement.textContent = question.question;
+    }
     
     const options = document.querySelectorAll('.quiz-option .option-text');
     options.forEach((opt, index) => {
-        opt.textContent = question.options[index];
+        if (index < question.options.length) {
+            opt.textContent = question.options[index];
+        }
     });
 }
 
@@ -1248,23 +1323,32 @@ function handleQuizClick() {
     
     const selectedOption = parseInt(this.getAttribute('data-option'));
     const correctOption = quizQuestions[quizScore].answer;
+    const resultatQuiz = document.getElementById('resultat-quiz');
+    const scoreQuiz = document.getElementById('score-quiz');
     
     if (selectedOption === correctOption) {
         quizScore++;
-        document.getElementById('resultat-quiz').textContent = "✅ Bonne réponse!";
-        document.getElementById('resultat-quiz').style.color = '#4CAF50';
+        if (resultatQuiz) {
+            resultatQuiz.textContent = "✅ Bonne réponse!";
+            resultatQuiz.style.color = '#4CAF50';
+        }
     } else {
-        document.getElementById('resultat-quiz').textContent = `❌ Mauvaise réponse! La bonne réponse était : ${quizQuestions[quizScore].options[correctOption - 1]}`;
-        document.getElementById('resultat-quiz').style.color = '#FF6B6B';
+        if (resultatQuiz) {
+            resultatQuiz.textContent = `❌ Mauvaise réponse! La bonne réponse était : ${quizQuestions[quizScore].options[correctOption]}`;
+            resultatQuiz.style.color = '#FF6B6B';
+        }
     }
     
-    document.getElementById('score-quiz').textContent = quizScore;
+    if (scoreQuiz) scoreQuiz.textContent = quizScore;
     
     setTimeout(showQuestion, 1500);
 }
 
 function endQuizGame() {
     const rules = gameRules.quiz;
+    const resultatQuiz = document.getElementById('resultat-quiz');
+    if (!resultatQuiz) return;
+    
     let finalMessage = `Quiz terminé! Votre score: ${quizScore}/${quizQuestions.length}`;
     let punishmentText = '';
     
@@ -1276,13 +1360,12 @@ function endQuizGame() {
         punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition}</p>`;
     }
     
-    const resultDiv = document.getElementById('resultat-quiz');
-    resultDiv.innerHTML = `<h3>${finalMessage}</h3>${punishmentText}`;
+    resultatQuiz.innerHTML = `<h3>${finalMessage}</h3>${punishmentText}`;
     
     document.querySelectorAll('.quiz-option').forEach(opt => {
         opt.style.pointerEvents = 'none';
     });
-}*/
+}
 
 // =============================
 // JEU DE DÉ
@@ -1291,10 +1374,12 @@ function initializeDice() {
     const rules = gameRules.dice;
     
     diceScore = 0;
-    document.getElementById('score-dice').textContent = diceScore;
-    document.getElementById('resultat-dice').textContent = `🎯 ${rules.victoire}`;
+    const scoreDice = document.getElementById('score-dice');
+    const resultatDice = document.getElementById('resultat-dice');
     
-    // Activer le lancer de dé
+    if (scoreDice) scoreDice.textContent = diceScore;
+    if (resultatDice) resultatDice.textContent = `🎯 ${rules.victoire}`;
+    
     const rollButton = document.getElementById('btn-roll-dice');
     if (rollButton) {
         rollButton.disabled = false;
@@ -1306,6 +1391,8 @@ function rollDice() {
     if (currentGameType !== 'dice') return;
     
     const dice = document.getElementById('de');
+    if (!dice) return;
+    
     dice.classList.add('rolling');
     
     setTimeout(() => {
@@ -1316,29 +1403,33 @@ function rollDice() {
         dice.classList.remove('rolling');
         
         diceScore += roll;
-        document.getElementById('score-dice').textContent = diceScore;
-        document.getElementById('resultat-dice').textContent = `Vous avez obtenu un ${roll}!`;
+        const scoreDice = document.getElementById('score-dice');
+        const resultatDice = document.getElementById('resultat-dice');
         
-        // Vérifier la victoire
+        if (scoreDice) scoreDice.textContent = diceScore;
+        if (resultatDice) resultatDice.textContent = `Vous avez obtenu un ${roll}!`;
+        
         const rules = gameRules.dice;
         if (diceScore >= 15) {
             const resultDiv = document.getElementById('resultat-dice');
-            resultDiv.innerHTML = `
-                <h3>🎉 Félicitations! ${rules.victoire}</h3>
-                <p class="punition">💥 Vous avez évité la punition!</p>
-            `;
-            document.getElementById('btn-roll-dice').disabled = true;
+            if (resultDiv) {
+                resultDiv.innerHTML = `
+                    <h3>🎉 Félicitations! ${rules.victoire}</h3>
+                    <p class="punition">💥 Vous avez évité la punition!</p>
+                `;
+            }
+            const rollButton = document.getElementById('btn-roll-dice');
+            if (rollButton) rollButton.disabled = true;
         }
     }, 1000);
 }
 
 // =============================
-// JEU MOTS MÊLÉS (avec timer)
+// JEU MOTS MÊLÉS
 // =============================
 function initializeMotsMelees() {
     const rules = gameRules.mots;
     
-    // Préparer les mots
     const mots = rules.mots.split(',').map(mot => mot.trim().toUpperCase()).filter(mot => mot.length > 0);
     
     if (mots.length === 0) {
@@ -1351,25 +1442,25 @@ function initializeMotsMelees() {
     motsMelees.selectedCells = [];
     motsMelees.timeLeft = rules.timer || 60;
     
-    document.getElementById('mots-trouves').textContent = '0';
-    document.getElementById('mots-total').textContent = mots.length;
+    const motsTrouves = document.getElementById('mots-trouves');
+    const motsTotal = document.getElementById('mots-total');
     
-    // Créer l'élément timer s'il n'existe pas
+    if (motsTrouves) motsTrouves.textContent = '0';
+    if (motsTotal) motsTotal.textContent = mots.length;
+    
     let timerElement = document.getElementById('mots-timer');
     if (!timerElement) {
         timerElement = document.createElement('div');
         timerElement.id = 'mots-timer';
         timerElement.className = 'timer';
-        document.querySelector('#jeu-mots .game-info').appendChild(timerElement);
+        const gameInfo = document.querySelector('#jeu-mots .game-info');
+        if (gameInfo) {
+            gameInfo.appendChild(timerElement);
+        }
     }
     
-    // Générer la grille
     generateWordSearchGrid();
-    
-    // Afficher la liste des mots
     displayWordList();
-    
-    // Démarrer le timer
     startMotsTimer();
 }
 
@@ -1378,7 +1469,10 @@ function startMotsTimer() {
     
     motsMelees.gameTimer = setInterval(() => {
         motsMelees.timeLeft--;
-        document.getElementById('mots-timer').textContent = `Temps restant: ${motsMelees.timeLeft}s`;
+        const timerElement = document.getElementById('mots-timer');
+        if (timerElement) {
+            timerElement.textContent = `Temps restant: ${motsMelees.timeLeft}s`;
+        }
         
         if (motsMelees.timeLeft <= 0) {
             clearInterval(motsMelees.gameTimer);
@@ -1390,19 +1484,14 @@ function startMotsTimer() {
 function generateWordSearchGrid() {
     const gridSize = gameRules.mots.gridSize;
     const grid = document.getElementById('mots-grid');
+    if (!grid) return;
+    
     grid.innerHTML = '';
     grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
     
-    // Créer une grille vide
     motsMelees.grid = Array(gridSize).fill().map(() => Array(gridSize).fill(''));
-    
-    // Placer les mots dans la grille
     placeWordsInGrid();
-    
-    // Remplir les cases vides avec des lettres aléatoires
     fillEmptyCells();
-    
-    // Afficher la grille
     displayGrid();
 }
 
@@ -1477,6 +1566,8 @@ function displayGrid() {
     const grid = document.getElementById('mots-grid');
     const gridSize = gameRules.mots.gridSize;
     
+    if (!grid) return;
+    
     for (let i = 0; i < gridSize; i++) {
         for (let j = 0; j < gridSize; j++) {
             const cell = document.createElement('div');
@@ -1494,6 +1585,8 @@ function displayGrid() {
 
 function displayWordList() {
     const wordList = document.getElementById('word-list');
+    if (!wordList) return;
+    
     wordList.innerHTML = '';
     
     for (let mot of motsMelees.words) {
@@ -1508,12 +1601,11 @@ function selectWordCell(row, col) {
     if (currentGameType !== 'mots') return;
     
     const cell = document.querySelector(`.word-cell[data-row="${row}"][data-col="${col}"]`);
+    if (!cell) return;
     
     checkWordAtPosition(row, col);
-    
     cell.classList.add('selected');
     
-    // Vérifier si tous les mots sont trouvés
     if (motsMelees.foundWords.length === motsMelees.words.length) {
         endMotsGame(true);
     }
@@ -1555,7 +1647,8 @@ function isWordAtPosition(mot, row, col, direction) {
 }
 
 function updateFoundWords() {
-    document.getElementById('mots-trouves').textContent = motsMelees.foundWords.length;
+    const motsTrouves = document.getElementById('mots-trouves');
+    if (motsTrouves) motsTrouves.textContent = motsMelees.foundWords.length;
     
     const wordItems = document.querySelectorAll('.word-item');
     wordItems.forEach(item => {
@@ -1584,21 +1677,23 @@ function endMotsGame(hasWon) {
     }
     
     const resultDiv = document.getElementById('resultat-mots');
-    resultDiv.innerHTML = `<h3>${message}</h3>${punishmentText}`;
+    if (resultDiv) {
+        resultDiv.innerHTML = `<h3>${message}</h3>${punishmentText}`;
+    }
     
-    // Désactiver les cellules
     document.querySelectorAll('.word-cell').forEach(cell => {
         cell.style.pointerEvents = 'none';
     });
 }
 
 // =============================
-// JEU SNAKE (CORRIGÉ COMPLÈTEMENT)
+// JEU SNAKE (CORRIGÉ)
 // =============================
 function initializeSnake() {
+    console.log("Initialisation du Snake...");
+    
     const canvas = document.getElementById('snake-canvas');
     
-    // Vérifier si le canvas existe
     if (!canvas) {
         console.error("Canvas Snake non trouvé!");
         return;
@@ -1606,14 +1701,12 @@ function initializeSnake() {
     
     const ctx = canvas.getContext('2d');
     
-    // Arrêter le jeu précédent s'il existe
     if (snakeGame.gameLoop) {
         clearInterval(snakeGame.gameLoop);
         clearInterval(snakeGame.timerInterval);
         document.removeEventListener('keydown', handleSnakeKeyPress);
     }
     
-    // Réinitialiser complètement le jeu
     snakeGame.canvas = canvas;
     snakeGame.ctx = ctx;
     snakeGame.snake = [{x: 10, y: 10}];
@@ -1626,7 +1719,8 @@ function initializeSnake() {
     snakeGame.timer = 0;
     snakeGame.timerInterval = null;
     
-    // S'assurer que le container Snake est visible
+    snakeGame.speed = gameRules.snake.vitesse || 120;
+    
     const jeuSnake = document.getElementById('jeu-snake');
     if (jeuSnake) {
         jeuSnake.style.display = 'block';
@@ -1640,45 +1734,51 @@ function initializeSnake() {
         snakeContainer.style.minHeight = '500px';
     }
     
-    // Réinitialiser l'affichage
-    document.getElementById('snake-score').textContent = '0';
-    document.getElementById('snake-length').textContent = '1';
-    document.getElementById('resultat-snake').innerHTML = '';
+    const scoreElement = document.getElementById('snake-score');
+    const lengthElement = document.getElementById('snake-length');
+    const resultElement = document.getElementById('resultat-snake');
     
-    // Créer ou mettre à jour l'élément timer
+    if (scoreElement) scoreElement.textContent = '0';
+    if (lengthElement) lengthElement.textContent = '1';
+    if (resultElement) resultElement.innerHTML = '';
+    
     let timerElement = document.getElementById('snake-timer');
     if (!timerElement) {
         timerElement = document.createElement('div');
         timerElement.id = 'snake-timer';
         timerElement.className = 'timer-display';
+        timerElement.style.cssText = `
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        `;
         const gameInfo = document.querySelector('#jeu-snake .game-info');
         if (gameInfo) {
             gameInfo.prepend(timerElement);
         }
     }
     timerElement.textContent = 'Temps: 00:00';
+    timerElement.style.color = '#4ecdc4';
+    timerElement.style.animation = 'none';
     
-    // Nettoyer le canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Créer l'écran de démarrage
     createSnakeStartScreen();
-    
-    // Dessiner l'état initial
     drawSnake();
-    
-    // Désactiver les contrôles au début
     disableSnakeControls();
 }
 
 function createSnakeStartScreen() {
-    // Supprimer l'écran existant
     const existingScreen = document.getElementById('snake-start-screen');
     if (existingScreen) {
         existingScreen.remove();
     }
     
-    // Créer un nouvel écran de démarrage
+    const gameOverScreen = document.getElementById('snake-game-over');
+    if (gameOverScreen) {
+        gameOverScreen.remove();
+    }
+    
     const startScreen = document.createElement('div');
     startScreen.id = 'snake-start-screen';
     startScreen.style.cssText = `
@@ -1700,10 +1800,20 @@ function createSnakeStartScreen() {
     `;
     
     const rules = gameRules.snake;
+    const scoreGoal = rules.scoreGoal || 50;
+    const vitesse = snakeGame.speed;
+    let vitesseText = 'Moyen';
+    
+    if (vitesse >= 180) vitesseText = 'Lent';
+    else if (vitesse >= 120) vitesseText = 'Moyen';
+    else if (vitesse >= 80) vitesseText = 'Rapide';
+    else vitesseText = 'Très rapide';
+    
     startScreen.innerHTML = `
         <h2 style="color: #4ecdc4; margin-bottom: 20px; text-align: center;">🐍 Jeu du Serpent</h2>
         <div style="text-align: center; margin-bottom: 20px; padding: 0 20px;">
-            <p style="margin-bottom: 10px;"><strong>Objectif :</strong> Atteindre ${rules.scoreGoal || 50} points</p>
+            <p style="margin-bottom: 10px;"><strong>Objectif :</strong> Atteindre ${scoreGoal} points</p>
+            <p style="margin-bottom: 10px;"><strong>Vitesse :</strong> ${vitesseText}</p>
             <p style="margin-bottom: 10px;"><strong>Contrôles :</strong> Flèches directionnelles ou boutons</p>
             <p style="margin-bottom: 10px;"><strong>Pénalité :</strong> ${rules.punition || "Faire 20 sauts"}</p>
             <p style="margin-bottom: 15px; color: #ff9f43;"><strong>⏱️ Temps limite : 2 minutes</strong></p>
@@ -1723,33 +1833,26 @@ function createSnakeStartScreen() {
         </button>
     `;
     
-    // S'assurer que le container Snake est accessible
     const snakeContainer = document.querySelector('.snake-container');
     if (snakeContainer) {
         snakeContainer.appendChild(startScreen);
     }
     
-    // Ajouter l'événement au bouton de démarrage
     const startBtn = document.getElementById('start-snake-game-btn');
     if (startBtn) {
+        startBtn.onclick = null;
         startBtn.addEventListener('click', startSnakeGame);
     }
 }
 
 function startSnakeGame() {
-    // Masquer l'écran de démarrage
+    console.log("Démarrage du jeu Snake...");
+    
     const startScreen = document.getElementById('snake-start-screen');
     if (startScreen) {
         startScreen.style.display = 'none';
     }
     
-    // Supprimer l'écran de fin s'il existe
-    const gameOverScreen = document.getElementById('snake-game-over');
-    if (gameOverScreen) {
-        gameOverScreen.remove();
-    }
-    
-    // Réinitialiser le jeu
     snakeGame.snake = [{x: 10, y: 10}];
     snakeGame.direction = 'right';
     snakeGame.food = {x: 15, y: 15};
@@ -1758,28 +1861,23 @@ function startSnakeGame() {
     snakeGame.gameOver = false;
     snakeGame.timer = 0;
     
-    // Mettre à jour l'affichage
     document.getElementById('snake-score').textContent = '0';
     document.getElementById('snake-length').textContent = '1';
     document.getElementById('resultat-snake').innerHTML = '';
     
-    // Activer les contrôles
     enableSnakeControls();
-    
-    // Ajouter les écouteurs d'événements
     setupSnakeControls();
-    
-    // Démarrer le timer
     startSnakeTimer();
     
-    // Démarrer la boucle de jeu
-    const speed = 1000 / (gameRules.snake.vitesse * 10);
     if (snakeGame.gameLoop) clearInterval(snakeGame.gameLoop);
-    snakeGame.gameLoop = setInterval(updateSnake, speed);
+    snakeGame.gameLoop = setInterval(updateSnake, snakeGame.speed);
+    
+    drawSnake();
 }
 
 function setupSnakeControls() {
-    // Configurer les boutons tactiles
+    console.log("Configuration des contrôles Snake...");
+    
     const upBtn = document.getElementById('up');
     const downBtn = document.getElementById('down');
     const leftBtn = document.getElementById('left');
@@ -1802,7 +1900,6 @@ function setupSnakeControls() {
         rightBtn.addEventListener('click', () => changeSnakeDirection('right'));
     }
     
-    // Ajouter l'écouteur clavier
     document.removeEventListener('keydown', handleSnakeKeyPress);
     document.addEventListener('keydown', handleSnakeKeyPress);
 }
@@ -1859,7 +1956,6 @@ function startSnakeTimer() {
         snakeGame.timer++;
         updateSnakeTimerDisplay();
         
-        // Vérifier si le temps est écoulé (2 minutes = 120 secondes)
         if (snakeGame.timer >= 120) {
             endSnakeGame("⏰ Temps écoulé !");
         }
@@ -1876,7 +1972,6 @@ function updateSnakeTimerDisplay() {
     
     timerElement.textContent = `⏱️ ${timeString}`;
     
-    // Changer la couleur selon le temps restant
     const timeLeft = 120 - snakeGame.timer;
     if (timeLeft <= 30) {
         timerElement.style.color = '#ff9f43';
@@ -1884,6 +1979,9 @@ function updateSnakeTimerDisplay() {
             timerElement.style.color = '#ff6b6b';
             timerElement.style.animation = 'blink 1s infinite';
         }
+    } else {
+        timerElement.style.color = '#4ecdc4';
+        timerElement.style.animation = 'none';
     }
 }
 
@@ -1891,10 +1989,9 @@ function generateSnakeFood() {
     const x = Math.floor(Math.random() * (snakeGame.canvas.width / snakeGame.gridSize));
     const y = Math.floor(Math.random() * (snakeGame.canvas.height / snakeGame.gridSize));
     
-    // Vérifier que la nourriture n'apparaît pas sur le serpent
     for (let segment of snakeGame.snake) {
         if (segment.x === x && segment.y === y) {
-            return generateSnakeFood(); // Réessayer
+            return generateSnakeFood();
         }
     }
     
@@ -1913,14 +2010,12 @@ function updateSnake() {
         case 'right': head.x++; break;
     }
     
-    // Vérifier les collisions avec les murs
     if (head.x < 0 || head.x >= snakeGame.canvas.width / snakeGame.gridSize ||
         head.y < 0 || head.y >= snakeGame.canvas.height / snakeGame.gridSize) {
         endSnakeGame("💥 Le serpent a touché un mur !");
         return;
     }
     
-    // Vérifier les collisions avec soi-même
     for (let i = 1; i < snakeGame.snake.length; i++) {
         if (head.x === snakeGame.snake[i].x && head.y === snakeGame.snake[i].y) {
             endSnakeGame("💥 Le serpent s'est mordu la queue !");
@@ -1930,14 +2025,12 @@ function updateSnake() {
     
     snakeGame.snake.unshift(head);
     
-    // Vérifier si la nourriture est mangée
     if (head.x === snakeGame.food.x && head.y === snakeGame.food.y) {
         snakeGame.score += 10;
         document.getElementById('snake-score').textContent = snakeGame.score;
         document.getElementById('snake-length').textContent = snakeGame.snake.length;
         generateSnakeFood();
         
-        // Vérifier la victoire
         if (snakeGame.score >= (gameRules.snake.scoreGoal || 50)) {
             const minutes = Math.floor(snakeGame.timer / 60);
             const seconds = snakeGame.timer % 60;
@@ -1957,14 +2050,11 @@ function drawSnake() {
     if (!snakeGame.ctx) return;
     
     const ctx = snakeGame.ctx;
-    // Effacer le canvas
     ctx.clearRect(0, 0, snakeGame.canvas.width, snakeGame.canvas.height);
     
-    // Dessiner le fond
     ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
     ctx.fillRect(0, 0, snakeGame.canvas.width, snakeGame.canvas.height);
     
-    // Dessiner la grille
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.lineWidth = 1;
     for (let x = 0; x < snakeGame.canvas.width; x += snakeGame.gridSize) {
@@ -1980,10 +2070,8 @@ function drawSnake() {
         ctx.stroke();
     }
     
-    // Dessiner le serpent
     snakeGame.snake.forEach((segment, index) => {
         if (index === 0) {
-            // Tête du serpent
             ctx.fillStyle = '#2ecc71';
             ctx.fillRect(
                 segment.x * snakeGame.gridSize,
@@ -1991,8 +2079,30 @@ function drawSnake() {
                 snakeGame.gridSize - 2,
                 snakeGame.gridSize - 2
             );
+            
+            ctx.fillStyle = 'white';
+            if (snakeGame.direction === 'right') {
+                ctx.fillRect(segment.x * snakeGame.gridSize + snakeGame.gridSize - 4, 
+                           segment.y * snakeGame.gridSize + 4, 2, 2);
+                ctx.fillRect(segment.x * snakeGame.gridSize + snakeGame.gridSize - 4, 
+                           segment.y * snakeGame.gridSize + snakeGame.gridSize - 6, 2, 2);
+            } else if (snakeGame.direction === 'left') {
+                ctx.fillRect(segment.x * snakeGame.gridSize + 2, 
+                           segment.y * snakeGame.gridSize + 4, 2, 2);
+                ctx.fillRect(segment.x * snakeGame.gridSize + 2, 
+                           segment.y * snakeGame.gridSize + snakeGame.gridSize - 6, 2, 2);
+            } else if (snakeGame.direction === 'up') {
+                ctx.fillRect(segment.x * snakeGame.gridSize + 4, 
+                           segment.y * snakeGame.gridSize + 2, 2, 2);
+                ctx.fillRect(segment.x * snakeGame.gridSize + snakeGame.gridSize - 6, 
+                           segment.y * snakeGame.gridSize + 2, 2, 2);
+            } else if (snakeGame.direction === 'down') {
+                ctx.fillRect(segment.x * snakeGame.gridSize + 4, 
+                           segment.y * snakeGame.gridSize + snakeGame.gridSize - 4, 2, 2);
+                ctx.fillRect(segment.x * snakeGame.gridSize + snakeGame.gridSize - 6, 
+                           segment.y * snakeGame.gridSize + snakeGame.gridSize - 4, 2, 2);
+            }
         } else {
-            // Corps du serpent
             ctx.fillStyle = '#4ecdc4';
             ctx.fillRect(
                 segment.x * snakeGame.gridSize,
@@ -2003,7 +2113,6 @@ function drawSnake() {
         }
     });
     
-    // Dessiner la nourriture
     ctx.fillStyle = '#ff6b6b';
     ctx.beginPath();
     ctx.arc(
@@ -2032,10 +2141,7 @@ function endSnakeGame(message, isVictory = false) {
         snakeGame.timerInterval = null;
     }
     
-    // Désactiver les contrôles
     disableSnakeControls();
-    
-    // Retirer l'écouteur clavier
     document.removeEventListener('keydown', handleSnakeKeyPress);
     
     const rules = gameRules.snake;
@@ -2043,12 +2149,10 @@ function endSnakeGame(message, isVictory = false) {
     const seconds = snakeGame.timer % 60;
     const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     
-    // Afficher l'écran de fin de jeu
     createSnakeGameOverScreen(message, isVictory, timeString);
 }
 
 function createSnakeGameOverScreen(message, isVictory, timeString) {
-    // Créer l'écran de fin de jeu
     const gameOverScreen = document.createElement('div');
     gameOverScreen.id = 'snake-game-over';
     gameOverScreen.style.cssText = `
@@ -2123,9 +2227,9 @@ function createSnakeGameOverScreen(message, isVictory, timeString) {
         snakeContainer.appendChild(gameOverScreen);
     }
     
-    // Ajouter l'événement au bouton de redémarrage
     const restartBtn = document.getElementById('restart-snake-game-btn');
     if (restartBtn) {
+        restartBtn.onclick = null;
         restartBtn.addEventListener('click', () => {
             if (gameOverScreen) {
                 gameOverScreen.remove();
@@ -2183,7 +2287,6 @@ function initializeActionVerite() {
     document.getElementById('resultat-action').textContent = '';
     document.getElementById('card-content').textContent = 'Cliquez sur un bouton pour commencer!';
     
-    // Réactiver les boutons
     document.getElementById('btn-action').disabled = false;
     document.getElementById('btn-verite').disabled = false;
     document.getElementById('btn-next-player').disabled = false;
@@ -2238,24 +2341,38 @@ function initializeCalcul() {
     calculMental.count = 0;
     calculMental.timeLeft = rules.timePerQuestion || 10;
     
-    document.getElementById('calcul-score').textContent = calculMental.score;
-    document.getElementById('calcul-count').textContent = calculMental.count;
-    document.getElementById('calcul-total').textContent = rules.manches;
-    document.getElementById('resultat-calcul').textContent = '';
-    document.getElementById('timer-progress').style.width = '100%';
-    document.getElementById('calcul-timer').textContent = calculMental.timeLeft;
-    document.getElementById('calcul-reponse').disabled = false;
-    document.getElementById('btn-valider-calcul').disabled = false;
+    const calculScore = document.getElementById('calcul-score');
+    const calculCount = document.getElementById('calcul-count');
+    const calculTotal = document.getElementById('calcul-total');
+    const resultatCalcul = document.getElementById('resultat-calcul');
+    const timerProgress = document.getElementById('timer-progress');
+    const calculTimer = document.getElementById('calcul-timer');
+    const calculReponse = document.getElementById('calcul-reponse');
+    const btnValiderCalcul = document.getElementById('btn-valider-calcul');
+    
+    if (calculScore) calculScore.textContent = calculMental.score;
+    if (calculCount) calculCount.textContent = calculMental.count;
+    if (calculTotal) calculTotal.textContent = rules.manches;
+    if (resultatCalcul) resultatCalcul.textContent = '';
+    if (timerProgress) timerProgress.style.width = '100%';
+    if (calculTimer) calculTimer.textContent = calculMental.timeLeft;
+    if (calculReponse) calculReponse.disabled = false;
+    if (btnValiderCalcul) btnValiderCalcul.disabled = false;
     
     generateCalculQuestion();
     startCalculTimer();
     
-    document.getElementById('btn-valider-calcul').addEventListener('click', validateCalculAnswer);
-    document.getElementById('calcul-reponse').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            validateCalculAnswer();
-        }
-    });
+    if (btnValiderCalcul) {
+        btnValiderCalcul.addEventListener('click', validateCalculAnswer);
+    }
+    
+    if (calculReponse) {
+        calculReponse.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                validateCalculAnswer();
+            }
+        });
+    }
 }
 
 function generateCalculQuestion() {
@@ -2302,27 +2419,37 @@ function generateCalculQuestion() {
     }
     
     calculMental.currentQuestion = { a, b, operation, result };
-    document.getElementById('calcul-question').textContent = `${a} ${operation} ${b} = ?`;
-    document.getElementById('calcul-reponse').value = '';
-    document.getElementById('calcul-reponse').focus();
+    const calculQuestion = document.getElementById('calcul-question');
+    if (calculQuestion) {
+        calculQuestion.textContent = `${a} ${operation} ${b} = ?`;
+    }
+    const calculReponse = document.getElementById('calcul-reponse');
+    if (calculReponse) {
+        calculReponse.value = '';
+        calculReponse.focus();
+    }
 }
 
 function startCalculTimer() {
     clearInterval(calculMental.timer);
     calculMental.timeLeft = gameRules.calcul.timePerQuestion || 10;
-    document.getElementById('timer-progress').style.width = '100%';
-    document.getElementById('calcul-timer').textContent = calculMental.timeLeft;
+    const timerProgress = document.getElementById('timer-progress');
+    const calculTimer = document.getElementById('calcul-timer');
+    
+    if (timerProgress) timerProgress.style.width = '100%';
+    if (calculTimer) calculTimer.textContent = calculMental.timeLeft;
     
     calculMental.timer = setInterval(() => {
         calculMental.timeLeft--;
         const progress = (calculMental.timeLeft / (gameRules.calcul.timePerQuestion || 10)) * 100;
-        document.getElementById('timer-progress').style.width = progress + '%';
-        document.getElementById('calcul-timer').textContent = calculMental.timeLeft;
+        if (timerProgress) timerProgress.style.width = progress + '%';
+        if (calculTimer) calculTimer.textContent = calculMental.timeLeft;
         
         if (calculMental.timeLeft <= 0) {
             clearInterval(calculMental.timer);
             calculMental.count++;
-            document.getElementById('calcul-count').textContent = calculMental.count;
+            const calculCount = document.getElementById('calcul-count');
+            if (calculCount) calculCount.textContent = calculMental.count;
             
             if (calculMental.count >= gameRules.calcul.manches) {
                 endCalculGame();
@@ -2337,30 +2464,44 @@ function startCalculTimer() {
 function validateCalculAnswer() {
     if (currentGameType !== 'calcul') return;
     
-    const userAnswer = parseInt(document.getElementById('calcul-reponse').value);
+    const calculReponse = document.getElementById('calcul-reponse');
+    if (!calculReponse) return;
+    
+    const userAnswer = parseInt(calculReponse.value);
     const correctAnswer = calculMental.currentQuestion.result;
     
     if (isNaN(userAnswer)) {
-        document.getElementById('resultat-calcul').textContent = "Veuillez entrer un nombre!";
-        document.getElementById('resultat-calcul').style.color = '#FF6B6B';
+        const resultatCalcul = document.getElementById('resultat-calcul');
+        if (resultatCalcul) {
+            resultatCalcul.textContent = "Veuillez entrer un nombre!";
+            resultatCalcul.style.color = '#FF6B6B';
+        }
         return;
     }
     
     clearInterval(calculMental.timer);
     
+    const resultatCalcul = document.getElementById('resultat-calcul');
+    const calculScore = document.getElementById('calcul-score');
+    const calculCount = document.getElementById('calcul-count');
+    
     if (userAnswer === correctAnswer) {
         calculMental.score++;
-        document.getElementById('resultat-calcul').textContent = "✅ Bonne réponse!";
-        document.getElementById('resultat-calcul').style.color = '#4CAF50';
+        if (resultatCalcul) {
+            resultatCalcul.textContent = "✅ Bonne réponse!";
+            resultatCalcul.style.color = '#4CAF50';
+        }
     } else {
-        document.getElementById('resultat-calcul').textContent = `❌ Mauvaise réponse! La réponse était ${correctAnswer}`;
-        document.getElementById('resultat-calcul').style.color = '#FF6B6B';
+        if (resultatCalcul) {
+            resultatCalcul.textContent = `❌ Mauvaise réponse! La réponse était ${correctAnswer}`;
+            resultatCalcul.style.color = '#FF6B6B';
+        }
     }
     
-    document.getElementById('calcul-score').textContent = calculMental.score;
+    if (calculScore) calculScore.textContent = calculMental.score;
     
     calculMental.count++;
-    document.getElementById('calcul-count').textContent = calculMental.count;
+    if (calculCount) calculCount.textContent = calculMental.count;
     
     if (calculMental.count >= gameRules.calcul.manches) {
         setTimeout(endCalculGame, 1500);
@@ -2374,6 +2515,12 @@ function validateCalculAnswer() {
 
 function endCalculGame() {
     const rules = gameRules.calcul;
+    const resultatCalcul = document.getElementById('resultat-calcul');
+    const calculReponse = document.getElementById('calcul-reponse');
+    const btnValiderCalcul = document.getElementById('btn-valider-calcul');
+    
+    if (!resultatCalcul) return;
+    
     let message = `Jeu terminé! Score: ${calculMental.score}/${rules.manches}`;
     let punishmentText = '';
     
@@ -2385,26 +2532,24 @@ function endCalculGame() {
         punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition}</p>`;
     }
     
-    document.getElementById('resultat-calcul').innerHTML = `<h3>${message}</h3>${punishmentText}`;
-    document.getElementById('calcul-reponse').disabled = true;
-    document.getElementById('btn-valider-calcul').disabled = true;
+    resultatCalcul.innerHTML = `<h3>${message}</h3>${punishmentText}`;
+    if (calculReponse) calculReponse.disabled = true;
+    if (btnValiderCalcul) btnValiderCalcul.disabled = true;
 }
 
 // =============================
-// JEU PONG (CORRIGÉ)
+// JEU PONG
 // =============================
 function initializePong() {
     const canvas = document.getElementById('pong-canvas');
     const ctx = canvas.getContext('2d');
     
-    // Arrêter le jeu précédent s'il existe
     if (pongGame.gameLoop) {
         clearInterval(pongGame.gameLoop);
         document.removeEventListener('keydown', handlePongKeyDown);
         document.removeEventListener('keyup', handlePongKeyUp);
     }
     
-    // Réinitialiser le jeu
     pongGame.canvas = canvas;
     pongGame.ctx = ctx;
     pongGame.ball = { 
@@ -2422,17 +2567,21 @@ function initializePong() {
     currentRound = 1;
     pongGame.isInitialized = true;
     
-    document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
-    document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
-    document.getElementById('pong-manche').textContent = currentRound;
-    document.getElementById('pong-manches').textContent = gameRules.pong.manches;
-    document.getElementById('resultat-pong').textContent = '';
+    const pongScoreJoueur = document.getElementById('pong-score-joueur');
+    const pongScoreAdversaire = document.getElementById('pong-score-adversaire');
+    const pongManche = document.getElementById('pong-manche');
+    const pongManches = document.getElementById('pong-manches');
+    const resultatPong = document.getElementById('resultat-pong');
     
-    // Ajouter les écouteurs de clavier
+    if (pongScoreJoueur) pongScoreJoueur.textContent = pongGame.playerScore;
+    if (pongScoreAdversaire) pongScoreAdversaire.textContent = pongGame.computerScore;
+    if (pongManche) pongManche.textContent = currentRound;
+    if (pongManches) pongManches.textContent = gameRules.pong.manches;
+    if (resultatPong) resultatPong.textContent = '';
+    
     document.addEventListener('keydown', handlePongKeyDown);
     document.addEventListener('keyup', handlePongKeyUp);
     
-    // Démarrer le jeu
     pongGame.gameLoop = setInterval(updatePong, 1000 / 60);
     
     drawPong();
@@ -2449,7 +2598,6 @@ function handlePongKeyUp(e) {
 }
 
 function updatePong() {
-    // Gestion des touches pour le joueur
     const paddleSpeed = 8;
     if (pongGame.keys['ArrowUp']) {
         pongGame.playerPaddle.y = Math.max(0, pongGame.playerPaddle.y - paddleSpeed);
@@ -2461,16 +2609,13 @@ function updatePong() {
         );
     }
     
-    // Déplacer la balle
     pongGame.ball.x += pongGame.ball.dx;
     pongGame.ball.y += pongGame.ball.dy;
     
-    // Rebond sur les murs haut/bas
     if (pongGame.ball.y - pongGame.ball.radius < 0 || pongGame.ball.y + pongGame.ball.radius > pongGame.canvas.height) {
         pongGame.ball.dy = -pongGame.ball.dy;
     }
     
-    // IA de l'ordinateur
     const computerPaddleCenter = pongGame.computerPaddle.y + pongGame.computerPaddle.height / 2;
     if (computerPaddleCenter < pongGame.ball.y - 10) {
         pongGame.computerPaddle.y = Math.min(
@@ -2481,20 +2626,16 @@ function updatePong() {
         pongGame.computerPaddle.y = Math.max(0, pongGame.computerPaddle.y - 6);
     }
     
-    // Collision avec les raquettes
-    // Joueur
     if (pongGame.ball.x - pongGame.ball.radius < pongGame.playerPaddle.x + pongGame.playerPaddle.width &&
         pongGame.ball.x + pongGame.ball.radius > pongGame.playerPaddle.x &&
         pongGame.ball.y > pongGame.playerPaddle.y &&
         pongGame.ball.y < pongGame.playerPaddle.y + pongGame.playerPaddle.height) {
         
-        // Calculer l'angle de rebond
         const hitPosition = (pongGame.ball.y - (pongGame.playerPaddle.y + pongGame.playerPaddle.height / 2)) / (pongGame.playerPaddle.height / 2);
         pongGame.ball.dx = Math.abs(pongGame.ball.dx);
         pongGame.ball.dy = hitPosition * 7;
     }
     
-    // Ordinateur
     if (pongGame.ball.x + pongGame.ball.radius > pongGame.computerPaddle.x &&
         pongGame.ball.x - pongGame.ball.radius < pongGame.computerPaddle.x + pongGame.computerPaddle.width &&
         pongGame.ball.y > pongGame.computerPaddle.y &&
@@ -2505,18 +2646,18 @@ function updatePong() {
         pongGame.ball.dy = hitPosition * 7;
     }
     
-    // Marquer un point
     if (pongGame.ball.x - pongGame.ball.radius < 0) {
         pongGame.computerScore++;
-        document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
+        const pongScoreAdversaire = document.getElementById('pong-score-adversaire');
+        if (pongScoreAdversaire) pongScoreAdversaire.textContent = pongGame.computerScore;
         resetPongBall();
     } else if (pongGame.ball.x + pongGame.ball.radius > pongGame.canvas.width) {
         pongGame.playerScore++;
-        document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
+        const pongScoreJoueur = document.getElementById('pong-score-joueur');
+        if (pongScoreJoueur) pongScoreJoueur.textContent = pongGame.playerScore;
         resetPongBall();
     }
     
-    // Vérifier la fin de manche
     const pointsToWin = gameRules.pong.pointsToWin || 5;
     if (pongGame.playerScore >= pointsToWin || pongGame.computerScore >= pointsToWin) {
         endPongRound();
@@ -2534,14 +2675,11 @@ function resetPongBall() {
 
 function drawPong() {
     const ctx = pongGame.ctx;
-    // Effacer le canvas
     ctx.clearRect(0, 0, pongGame.canvas.width, pongGame.canvas.height);
     
-    // Dessiner le fond
     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.fillRect(0, 0, pongGame.canvas.width, pongGame.canvas.height);
     
-    // Ligne centrale
     ctx.setLineDash([5, 15]);
     ctx.beginPath();
     ctx.moveTo(pongGame.canvas.width / 2, 0);
@@ -2550,13 +2688,11 @@ function drawPong() {
     ctx.stroke();
     ctx.setLineDash([]);
     
-    // Dessiner la balle
     ctx.fillStyle = '#4ecdc4';
     ctx.beginPath();
     ctx.arc(pongGame.ball.x, pongGame.ball.y, pongGame.ball.radius, 0, Math.PI * 2);
     ctx.fill();
     
-    // Dessiner les raquettes
     ctx.fillStyle = '#ff6b6b';
     ctx.fillRect(pongGame.playerPaddle.x, pongGame.playerPaddle.y, 
                  pongGame.playerPaddle.width, pongGame.playerPaddle.height);
@@ -2571,10 +2707,10 @@ function endPongRound() {
     pongGame.gameLoop = null;
     
     currentRound++;
-    document.getElementById('pong-manche').textContent = currentRound;
+    const pongManche = document.getElementById('pong-manche');
+    if (pongManche) pongManche.textContent = currentRound;
     
     if (currentRound > gameRules.pong.manches) {
-        // Fin du match
         document.removeEventListener('keydown', handlePongKeyDown);
         document.removeEventListener('keyup', handlePongKeyUp);
         
@@ -2583,26 +2719,33 @@ function endPongRound() {
         
         if (pongGame.playerScore > pongGame.computerScore) {
             message += `🎉 ${rules.victoire}`;
-            document.getElementById('resultat-pong').innerHTML = `
-                <h3>${message}</h3>
-                <p class="punition">💥 L'ordinateur doit: ${rules.punition}</p>
-            `;
+            const resultatPong = document.getElementById('resultat-pong');
+            if (resultatPong) {
+                resultatPong.innerHTML = `
+                    <h3>${message}</h3>
+                    <p class="punition">💥 L'ordinateur doit: ${rules.punition}</p>
+                `;
+            }
         } else {
             message += `💥 ${rules.defaite}`;
-            document.getElementById('resultat-pong').innerHTML = `
-                <h3>${message}</h3>
-                <p class="punition">💥 Vous devez: ${rules.punition}</p>
-            `;
+            const resultatPong = document.getElementById('resultat-pong');
+            if (resultatPong) {
+                resultatPong.innerHTML = `
+                    <h3>${message}</h3>
+                    <p class="punition">💥 Vous devez: ${rules.punition}</p>
+                `;
+            }
         }
     } else {
-        // Nouvelle manche
         pongGame.playerScore = 0;
         pongGame.computerScore = 0;
-        document.getElementById('pong-score-joueur').textContent = pongGame.playerScore;
-        document.getElementById('pong-score-adversaire').textContent = pongGame.computerScore;
+        const pongScoreJoueur = document.getElementById('pong-score-joueur');
+        const pongScoreAdversaire = document.getElementById('pong-score-adversaire');
+        
+        if (pongScoreJoueur) pongScoreJoueur.textContent = pongGame.playerScore;
+        if (pongScoreAdversaire) pongScoreAdversaire.textContent = pongGame.computerScore;
         resetPongBall();
         
-        // Redémarrer le jeu après un délai
         setTimeout(() => {
             pongGame.gameLoop = setInterval(updatePong, 1000 / 60);
         }, 1000);
