@@ -1,4 +1,4 @@
-/* style2.css - Page d'accueil style ESPORT avec animations 3D */
+/* style.css - Page d'accueil style ESPORT avec animations 3D */
 
 * {
     margin: 0;
@@ -12,12 +12,11 @@ body {
     background: linear-gradient(90deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
     color: #fff;
     min-height: 100vh;
-    /* SUPPRIMER ces deux lignes qui causent le problème */
-    /* display: flex; */
-    /* flex-direction: column; */
-    /* align-items: center; */
-    /* padding: 20px; */
-    /* AJOUTER à la place: */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    perspective: 1000px;
     overflow-x: hidden;
     animation: pageEntrance 2s ease-out forwards;
     opacity: 0;
@@ -48,8 +47,6 @@ body {
     animation: containerAppear 1.5s ease-out 0.5s forwards;
     opacity: 0;
     transform: translateY(50px);
-    /* AJOUTER: */
-    margin: 0 auto;
 }
 
 @keyframes containerAppear {
@@ -92,17 +89,14 @@ header {
     }
 }
 
-/* MODIFIER cette règle: */
 .container.header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 40px;
     max-width: 1400px;
-    margin: 0 auto; /* S'assurer que c'est bien centré */
-    width: 100%;
+    margin: 0 auto;
 }
-
 
 /* Logo ESPORT */
 .head {
@@ -246,6 +240,128 @@ header {
     }
 }
 
+/* Bouton Sign In */
+.btn-signin {
+    background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    box-shadow: 
+        0 5px 15px rgba(0, 212, 255, 0.4),
+        0 0 20px rgba(0, 212, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    animation: buttonPulse 3s ease-in-out infinite;
+}
+
+@keyframes buttonPulse {
+    0%, 100% {
+        box-shadow: 
+            0 5px 15px rgba(0, 212, 255, 0.4),
+            0 0 20px rgba(0, 212, 255, 0.2);
+    }
+    50% {
+        box-shadow: 
+            0 10px 25px rgba(0, 212, 255, 0.6),
+            0 0 40px rgba(0, 212, 255, 0.4);
+    }
+}
+
+.btn-signin:hover {
+    transform: translateY(-3px) scale(1.05);
+    background: linear-gradient(135deg, #0099ff 0%, #00d4ff 100%);
+}
+
+.btn-signin::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s;
+}
+
+.btn-signin:hover::before {
+    left: 100%;
+}
+
+/* Menu utilisateur */
+.btn-signin.logged-in {
+    position: relative;
+    padding-right: 40px;
+}
+
+.btn-signin.logged-in::after {
+    content: '▼';
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+}
+
+.user-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: rgba(15, 12, 41, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 77, 109, 0.3);
+    border-radius: 10px;
+    min-width: 200px;
+    margin-top: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: menuFadeIn 0.3s ease;
+    z-index: 1001;
+}
+
+@keyframes menuFadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.btn-signin:hover .user-menu {
+    display: block;
+}
+
+.user-menu a {
+    display: block;
+    padding: 12px 20px;
+    color: white;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: normal;
+}
+
+.user-menu a:hover {
+    background: rgba(255, 77, 109, 0.2);
+    padding-left: 25px;
+}
+
+.user-menu a:last-child {
+    border-bottom: none;
+    color: #ff6b6b;
+}
+
+.user-menu a:last-child:hover {
+    background: rgba(255, 107, 107, 0.2);
+}
+
 /* Navigation ESPORT */
 nav ul {
     display: flex;
@@ -316,6 +432,104 @@ nav a:hover, nav a.active {
         0 0 30px rgba(255, 77, 109, 0.2);
     border: 1px solid rgba(255, 77, 109, 0.3);
 }
+.description-container {
+    max-width: 800px;
+    margin: 0 auto 50px;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: descriptionAppear 1.2s ease-out 1.2s forwards;
+    opacity: 0;
+    transform: translateY(50px);
+}
+
+@keyframes descriptionAppear {
+    0% {
+        opacity: 0;
+        transform: translateY(50px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.description-text {
+    font-size: 1.3rem;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+    text-align: center;
+    padding: 0 20px;
+}
+
+
+/* Bouton Créer un jeu */
+.btn-create-game {
+    background: linear-gradient(135deg, #4ecdc4 0%, #2ecc71 100%);
+    color: white;
+    border: none;
+    padding: 18px 45px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    box-shadow: 
+        0 12px 25px rgba(78, 205, 196, 0.4),
+        0 0 40px rgba(78, 205, 196, 0.3);
+    animation: buttonCreatePulse 2s ease-in-out infinite 1.5s;
+}
+
+@keyframes buttonCreatePulse {
+    0%, 100% {
+        box-shadow: 
+            0 12px 25px rgba(78, 205, 196, 0.4),
+            0 0 40px rgba(78, 205, 196, 0.3);
+    }
+    50% {
+        box-shadow: 
+            0 15px 30px rgba(78, 205, 196, 0.6),
+            0 0 60px rgba(78, 205, 196, 0.5);
+    }
+}
+
+.btn-create-game::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #4ecdc4, #00d4ff, #4ecdc4);
+    z-index: -1;
+    border-radius: 52px;
+    opacity: 0;
+    transition: opacity 0.4s;
+    background-size: 400% 400%;
+    animation: borderGradient 3s linear infinite;
+}
+
+.btn-create-game:hover::before {
+    opacity: 1;
+}
+
+.btn-create-game:hover {
+    transform: translateY(-5px) scale(1.05);
+    letter-spacing: 3px;
+    box-shadow: 
+        0 20px 40px rgba(78, 205, 196, 0.5),
+        0 0 80px rgba(78, 205, 196, 0.4);
+}
+
 
 /* PAGE D'ACCUEIL STYLE ESPORT */
 #accueil {
@@ -465,7 +679,7 @@ nav a:hover, nav a.active {
 
 /* Sous-titre */
 .subtitle-container {
-    margin-bottom: 30px;
+    margin-bottom: 50px;
     animation: subtitleAppear 1s ease-out 1s forwards;
     opacity: 0;
     transform: translateY(50px);
@@ -522,104 +736,6 @@ nav a:hover, nav a.active {
         transform: translateY(-50%) scale(1.2);
         color: #ff4d6d;
     }
-}
-
-/* Description et bouton comme dans la capture d'écran */
-.description-container {
-    max-width: 800px;
-    margin: 0 auto 50px;
-    padding: 30px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    animation: descriptionAppear 1.2s ease-out 1.2s forwards;
-    opacity: 0;
-    transform: translateY(50px);
-}
-
-@keyframes descriptionAppear {
-    0% {
-        opacity: 0;
-        transform: translateY(50px) scale(0.95);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.description-text {
-    font-size: 1.3rem;
-    line-height: 1.6;
-    margin-bottom: 30px;
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 400;
-    text-align: center;
-    padding: 0 20px;
-}
-
-/* Bouton Créer un jeu */
-.btn-create-game {
-    background: linear-gradient(135deg, #4ecdc4 0%, #2ecc71 100%);
-    color: white;
-    border: none;
-    padding: 18px 45px;
-    font-size: 1.3rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-    box-shadow: 
-        0 12px 25px rgba(78, 205, 196, 0.4),
-        0 0 40px rgba(78, 205, 196, 0.3);
-    animation: buttonCreatePulse 2s ease-in-out infinite 1.5s;
-}
-
-@keyframes buttonCreatePulse {
-    0%, 100% {
-        box-shadow: 
-            0 12px 25px rgba(78, 205, 196, 0.4),
-            0 0 40px rgba(78, 205, 196, 0.3);
-    }
-    50% {
-        box-shadow: 
-            0 15px 30px rgba(78, 205, 196, 0.6),
-            0 0 60px rgba(78, 205, 196, 0.5);
-    }
-}
-
-.btn-create-game::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, #4ecdc4, #00d4ff, #4ecdc4);
-    z-index: -1;
-    border-radius: 52px;
-    opacity: 0;
-    transition: opacity 0.4s;
-    background-size: 400% 400%;
-    animation: borderGradient 3s linear infinite;
-}
-
-.btn-create-game:hover::before {
-    opacity: 1;
-}
-
-.btn-create-game:hover {
-    transform: translateY(-5px) scale(1.05);
-    letter-spacing: 3px;
-    box-shadow: 
-        0 20px 40px rgba(78, 205, 196, 0.5),
-        0 0 80px rgba(78, 205, 196, 0.4);
 }
 
 /* Bouton principal GET STARTED */
@@ -733,7 +849,7 @@ nav a:hover, nav a.active {
     display: flex;
     justify-content: center;
     gap: 80px;
-    margin-top: 60px;
+    margin-top: 80px;
     animation: statsAppear 1s ease-out 2s forwards;
     opacity: 0;
     transform: translateY(50px);
@@ -831,6 +947,230 @@ nav a:hover, nav a.active {
     height: 2px;
     background: linear-gradient(90deg, #ff4d6d, #00d4ff);
     border-radius: 1px;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background: linear-gradient(135deg, rgba(15, 12, 41, 0.95) 0%, rgba(36, 36, 62, 0.95) 100%);
+    margin: 10% auto;
+    padding: 40px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid rgba(255, 77, 109, 0.3);
+    box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        0 0 100px rgba(255, 77, 109, 0.2);
+    position: relative;
+    animation: modalSlideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(100px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #ff4d6d;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.close-modal:hover {
+    color: white;
+    background: rgba(255, 77, 109, 0.3);
+    transform: rotate(90deg);
+}
+
+.modal-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.modal-header h2 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #ff4d6d 0%, #00d4ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.modal-header p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+}
+
+/* Formulaires dans le modal */
+#loginForm, #signupForm {
+    animation: formAppear 0.5s ease-out;
+}
+
+@keyframes formAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal .form-group {
+    margin-bottom: 20px;
+    animation: inputAppear 0.6s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+@keyframes inputAppear {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal .form-group:nth-child(1) { animation-delay: 0.1s; }
+.modal .form-group:nth-child(2) { animation-delay: 0.2s; }
+.modal .form-group:nth-child(3) { animation-delay: 0.3s; }
+.modal .form-group:nth-child(4) { animation-delay: 0.4s; }
+
+.modal label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.modal input {
+    width: 100%;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.modal input:focus {
+    outline: none;
+    border-color: #ff4d6d;
+    box-shadow: 0 0 20px rgba(255, 77, 109, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.modal input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Case à cocher */
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.form-check input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+}
+
+.form-check label {
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Bouton du modal */
+.btn-modal {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 10px;
+    background: linear-gradient(135deg, #ff4d6d 0%, #ff2e63 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-modal:hover {
+    transform: translateY(-3px);
+    box-shadow: 
+        0 10px 25px rgba(255, 77, 109, 0.4),
+        0 0 40px rgba(255, 77, 109, 0.3);
+}
+
+/* Footer du formulaire */
+.form-footer {
+    margin-top: 20px;
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-footer p {
+    margin: 10px 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.form-footer a {
+    color: #00d4ff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.form-footer a:hover {
+    color: #ff4d6d;
+    text-decoration: underline;
+}
+
+.forgot-password {
+    font-size: 0.85rem;
+    display: inline-block;
+    margin-top: 5px;
 }
 
 /* Sections et pages */
@@ -1703,21 +2043,6 @@ body::after {
         width: 200px;
     }
     
-    .description-container {
-        padding: 20px;
-        margin-bottom: 30px;
-    }
-    
-    .description-text {
-        font-size: 1.1rem;
-        padding: 0;
-    }
-    
-    .btn-create-game {
-        padding: 15px 35px;
-        font-size: 1.2rem;
-    }
-    
     #btn-creer {
         padding: 18px 40px;
         font-size: 1.3rem;
@@ -1726,7 +2051,7 @@ body::after {
     .stats {
         flex-direction: column;
         gap: 25px;
-        margin-top: 40px;
+        margin-top: 60px;
     }
     
     .stat-item {
@@ -1786,6 +2111,22 @@ body::after {
         max-width: 400px;
         max-height: 267px;
     }
+    
+    /* Modal responsive */
+    .modal-content {
+        margin: 20% auto;
+        padding: 25px;
+        width: 85%;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .btn-signin {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1802,22 +2143,6 @@ body::after {
     
     .title-separator {
         width: 150px;
-    }
-    
-    .description-container {
-        padding: 15px;
-        margin-bottom: 25px;
-    }
-    
-    .description-text {
-        font-size: 1rem;
-        margin-bottom: 20px;
-    }
-    
-    .btn-create-game {
-        padding: 12px 30px;
-        font-size: 1.1rem;
-        letter-spacing: 1px;
     }
     
     #btn-creer {
@@ -1877,6 +2202,26 @@ body::after {
     
     .game-card h3 {
         font-size: 1.3rem;
+    }
+    
+    /* Modal responsive */
+    .modal-content {
+        margin: 25% auto;
+        padding: 20px;
+        width: 90%;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.3rem;
+    }
+    
+    .modal input {
+        padding: 12px;
+    }
+    
+    .btn-signin {
+        padding: 8px 16px;
+        font-size: 0.8rem;
     }
 }
 
@@ -1971,4 +2316,27 @@ footer {
 
 .custom-rules strong {
     color: #00d4ff;
+}
+
+/* Notification styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    z-index: 3000;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
 }

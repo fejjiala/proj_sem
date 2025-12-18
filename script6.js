@@ -1,35 +1,3 @@
-function createParticles() {
-    const container = document.getElementById('particles-container');
-    if (!container) return;
-    
-    for (let i = 0; i < 50; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        
-        // Tailles aléatoires
-        const size = Math.random() * 5 + 2;
-        particle.style.width = `${size}px`;
-        particle.style.height = `${size}px`;
-        
-        // Positions aléatoires
-        particle.style.left = `${Math.random() * 100}%`;
-        
-        // Animation aléatoire
-        const duration = Math.random() * 20 + 10;
-        const delay = Math.random() * 5;
-        particle.style.animationDuration = `${duration}s`;
-        particle.style.animationDelay = `${delay}s`;
-        
-        container.appendChild(particle);
-    }
-}
-
-// Appeler la fonction au chargement
-document.addEventListener('DOMContentLoaded', function() {
-    createParticles();
-    initializeApp();
-    updateStats();
-});
 // Variables globales
 let currentGameType = '';
 let currentGameMode = 'computer';
@@ -141,11 +109,51 @@ let quizQuestions = [
     }
 ];
 
+// Fonction pour créer des particules
+function createParticles() {
+    const container = document.getElementById('particles-container');
+    if (!container) return;
+    
+    for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        // Tailles aléatoires
+        const size = Math.random() * 5 + 2;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        
+        // Positions aléatoires
+        particle.style.left = `${Math.random() * 100}%`;
+        
+        // Animation aléatoire
+        const duration = Math.random() * 20 + 10;
+        const delay = Math.random() * 5;
+        particle.style.animationDuration = `${duration}s`;
+        particle.style.animationDelay = `${delay}s`;
+        
+        container.appendChild(particle);
+    }
+}
+
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', function() {
+    createParticles();
     initializeApp();
     updateStats();
+    
+    // Vérifier si l'utilisateur est déjà connecté
+    checkUserLogin();
 });
+
+// Vérifier si l'utilisateur est connecté
+function checkUserLogin() {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+        const user = JSON.parse(userData);
+        updateUserInterface(user.username);
+    }
+}
 
 function initializeApp() {
     // Navigation entre les pages
@@ -159,14 +167,14 @@ function initializeApp() {
         });
     });
 
-    // Bouton "Create a game" (nouveau bouton)
+     // Bouton "Create a game" (nouveau bouton)
     document.getElementById('btn-create-game').addEventListener('click', function() {
         showPage('choix');
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
         document.querySelector('[data-page="choix"]').classList.add('active');
     });
 
-    // Bouton "Créer un jeu" (ancien bouton)
+    // Bouton "Créer un jeu"
     document.getElementById('btn-creer').addEventListener('click', function() {
         showPage('choix');
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -212,13 +220,298 @@ function initializeApp() {
     document.getElementById('btn-rejouer').addEventListener('click', function() {
         initializeGame(currentGameType);
     });
+
+    // Gestion du bouton Sign In
+    document.getElementById('btn-signin').addEventListener('click', openLoginModal);
+    
+    // Gestion du modal
+    const modal = document.getElementById('loginModal');
+    const closeModal = document.getElementById('closeModal');
+    const showSignup = document.getElementById('showSignup');
+    const showLogin = document.getElementById('showLogin');
+    
+    closeModal.addEventListener('click', closeLoginModal);
+    
+    // Fermer le modal en cliquant en dehors
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeLoginModal();
+        }
+    });
+    
+    // Navigation entre login et signup
+    showSignup.addEventListener('click', function(e) {
+        e.preventDefault();
+        showSignupForm();
+    });
+    
+    showLogin.addEventListener('click', function(e) {
+        e.preventDefault();
+        showLoginForm();
+    });
+    
+    // Gestion des formulaires
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+    document.getElementById('signupForm').addEventListener('submit', handleSignup);
 }
 
+// Fonctions pour le modal
+function openLoginModal() {
+    const modal = document.getElementById('loginModal');
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLoginModal() {
+    const modal = document.getElementById('loginModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    resetForms();
+}
+
+function showSignupForm() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('signupForm').style.display = 'block';
+    document.querySelector('.modal-header h2').textContent = '👤 Inscription';
+    document.querySelector('.modal-header p').textContent = 'Créez votre compte pour sauvegarder vos jeux';
+}
+
+function showLoginForm() {
+    document.getElementById('signupForm').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+    document.querySelector('.modal-header h2').textContent = '🔐 Connexion';
+    document.querySelector('.modal-header p').textContent = 'Connectez-vous pour sauvegarder vos jeux et scores';
+}
+
+function resetForms() {
+    document.getElementById('loginForm').reset();
+    document.getElementById('signupForm').reset();
+    showLoginForm();
+}
+
+// Gestion de la connexion
+function handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    
+    // Animation de chargement
+    const submitBtn = event.target.querySelector('.btn-modal');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Connexion...';
+    submitBtn.disabled = true;
+    
+    // Simulation d'une connexion
+    setTimeout(() => {
+        // Exemple de validation
+        if (email && password) {
+            // Sauvegarde dans localStorage si "Se souvenir de moi"
+            if (rememberMe) {
+                localStorage.setItem('userEmail', email);
+            }
+            
+            // Mettre à jour l'interface
+            updateUserInterface(email.split('@')[0]);
+            
+            // Fermer le modal
+            closeLoginModal();
+            
+            // Afficher un message de succès
+            showNotification('Connexion réussie ! Bienvenue !', 'success');
+        } else {
+            showNotification('Veuillez remplir tous les champs', 'error');
+        }
+        
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }, 1500);
+}
+
+// Gestion de l'inscription
+function handleSignup(event) {
+    event.preventDefault();
+    
+    const username = document.getElementById('signupUsername').value;
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Validation
+    if (password !== confirmPassword) {
+        showNotification('Les mots de passe ne correspondent pas', 'error');
+        return;
+    }
+    
+    if (password.length < 8) {
+        showNotification('Le mot de passe doit contenir au moins 8 caractères', 'error');
+        return;
+    }
+    
+    // Animation de chargement
+    const submitBtn = event.target.querySelector('.btn-modal');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Inscription...';
+    submitBtn.disabled = true;
+    
+    // Simulation d'inscription
+    setTimeout(() => {
+        // Sauvegarde dans localStorage
+        const userData = {
+            username: username,
+            email: email,
+            games: [],
+            stats: {
+                gamesCreated: 0,
+                gamesPlayed: 0,
+                highScores: {}
+            }
+        };
+        
+        localStorage.setItem('userData', JSON.stringify(userData));
+        
+        // Mettre à jour l'interface
+        updateUserInterface(username);
+        
+        // Fermer le modal
+        closeLoginModal();
+        
+        // Afficher un message de succès
+        showNotification(`Compte créé avec succès ! Bienvenue ${username} !`, 'success');
+        
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }, 1500);
+}
+
+// Mettre à jour l'interface après connexion
+function updateUserInterface(username) {
+    const btnSignin = document.getElementById('btn-signin');
+    btnSignin.innerHTML = `
+        <span>👤 ${username}</span>
+        <div class="user-menu">
+            <a href="#" onclick="showUserProfile()">Profil</a>
+            <a href="#" onclick="showUserGames()">Mes jeux</a>
+            <a href="#" onclick="logout()">Déconnexion</a>
+        </div>
+    `;
+    btnSignin.classList.add('logged-in');
+    
+    // Charger les données utilisateur
+    loadUserData();
+}
+
+// Fonctions du menu utilisateur
+function showUserProfile() {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (userData) {
+        const profileHTML = `
+            <div class="modal-content">
+                <span class="close-modal" onclick="closeLoginModal()">&times;</span>
+                <div class="modal-header">
+                    <h2>👤 Profil de ${userData.username}</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="profile-info">
+                        <p><strong>Email :</strong> ${userData.email}</p>
+                        <p><strong>Jeux créés :</strong> ${userData.stats.gamesCreated}</p>
+                        <p><strong>Parties jouées :</strong> ${userData.stats.gamesPlayed}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const modal = document.getElementById('loginModal');
+        modal.innerHTML = profileHTML;
+        modal.style.display = 'block';
+    }
+}
+
+function showUserGames() {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (userData) {
+        let gamesHTML = '<h3>Mes jeux sauvegardés</h3>';
+        if (userData.games.length > 0) {
+            userData.games.forEach(game => {
+                gamesHTML += `<div class="game-item">${game.name}</div>`;
+            });
+        } else {
+            gamesHTML += '<p>Aucun jeu sauvegardé</p>';
+        }
+        
+        showNotification('Fonctionnalité à venir !', 'info');
+    }
+}
+
+function logout() {
+    localStorage.removeItem('userData');
+    localStorage.removeItem('userEmail');
+    
+    const btnSignin = document.getElementById('btn-signin');
+    btnSignin.innerHTML = 'Sign In';
+    btnSignin.classList.remove('logged-in');
+    
+    showNotification('Déconnexion réussie', 'success');
+}
+
+function loadUserData() {
+    // Charger les données utilisateur si besoin
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+        return JSON.parse(userData);
+    }
+    return null;
+}
+
+// Fonction pour afficher les notifications
+function showNotification(message, type = 'info') {
+    // Supprimer les notifications existantes
+    document.querySelectorAll('.notification').forEach(n => n.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 10px;
+        color: white;
+        font-weight: 600;
+        z-index: 3000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    if (type === 'success') {
+        notification.style.background = 'linear-gradient(135deg, #4CAF50, #2E7D32)';
+    } else if (type === 'error') {
+        notification.style.background = 'linear-gradient(135deg, #FF6B6B, #C62828)';
+    } else {
+        notification.style.background = 'linear-gradient(135deg, #2196F3, #0D47A1)';
+    }
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Fonctions principales du jeu
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
+        page.style.display = 'none';
     });
-    document.getElementById(pageId).classList.add('active');
+    
+    const pageElement = document.getElementById(pageId);
+    if (pageElement) {
+        pageElement.classList.add('active');
+        pageElement.style.display = 'block';
+    }
 }
 
 // Mettre à jour les statistiques
@@ -518,7 +811,7 @@ function generateGame() {
     // Validation
     const rules = gameRules[currentGameType];
     if (!rules.regles || !rules.victoire || !rules.defaite) {
-        alert("Veuillez remplir au moins les règles, conditions de victoire et de défaite.");
+        showNotification("Veuillez remplir au moins les règles, conditions de victoire et de défaite.", "error");
         return;
     }
     
@@ -541,13 +834,22 @@ function generateGame() {
     // Afficher la page du jeu
     showPage('jeu');
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    document.querySelector('[data-page="jeu"]').classList.add('active');
     
     // Afficher seulement le jeu sélectionné
     document.querySelectorAll('.jeu-type').forEach(jeu => {
         jeu.style.display = 'none';
     });
-    document.getElementById(`jeu-${currentGameType}`).style.display = 'block';
+    
+    const jeuElement = document.getElementById(`jeu-${currentGameType}`);
+    if (jeuElement) {
+        jeuElement.style.display = 'block';
+        
+        // S'assurer que le jeu Snake est correctement initialisé
+        if (currentGameType === 'snake') {
+            jeuElement.style.opacity = '1';
+            jeuElement.style.visibility = 'visible';
+        }
+    }
     
     // Initialiser le jeu
     initializeGame(currentGameType);
@@ -884,7 +1186,7 @@ function handlePFCClick() {
 // =============================
 // JEU QUIZ
 // =============================
-function initializeQuiz() {
+/*function initializeQuiz() {
     const rules = gameRules.quiz;
     
     quizScore = 0;
@@ -980,7 +1282,7 @@ function endQuizGame() {
     document.querySelectorAll('.quiz-option').forEach(opt => {
         opt.style.pointerEvents = 'none';
     });
-}
+}*/
 
 // =============================
 // JEU DE DÉ
@@ -1040,7 +1342,7 @@ function initializeMotsMelees() {
     const mots = rules.mots.split(',').map(mot => mot.trim().toUpperCase()).filter(mot => mot.length > 0);
     
     if (mots.length === 0) {
-        alert("Veuillez entrer au moins un mot dans la liste des mots.");
+        showNotification("Veuillez entrer au moins un mot dans la liste des mots.", "error");
         return;
     }
     
@@ -1295,6 +1597,13 @@ function endMotsGame(hasWon) {
 // =============================
 function initializeSnake() {
     const canvas = document.getElementById('snake-canvas');
+    
+    // Vérifier si le canvas existe
+    if (!canvas) {
+        console.error("Canvas Snake non trouvé!");
+        return;
+    }
+    
     const ctx = canvas.getContext('2d');
     
     // Arrêter le jeu précédent s'il existe
@@ -1317,6 +1626,20 @@ function initializeSnake() {
     snakeGame.timer = 0;
     snakeGame.timerInterval = null;
     
+    // S'assurer que le container Snake est visible
+    const jeuSnake = document.getElementById('jeu-snake');
+    if (jeuSnake) {
+        jeuSnake.style.display = 'block';
+        jeuSnake.style.visibility = 'visible';
+        jeuSnake.style.opacity = '1';
+    }
+    
+    const snakeContainer = document.querySelector('.snake-container');
+    if (snakeContainer) {
+        snakeContainer.style.position = 'relative';
+        snakeContainer.style.minHeight = '500px';
+    }
+    
     // Réinitialiser l'affichage
     document.getElementById('snake-score').textContent = '0';
     document.getElementById('snake-length').textContent = '1';
@@ -1328,9 +1651,15 @@ function initializeSnake() {
         timerElement = document.createElement('div');
         timerElement.id = 'snake-timer';
         timerElement.className = 'timer-display';
-        document.querySelector('#jeu-snake .game-info').prepend(timerElement);
+        const gameInfo = document.querySelector('#jeu-snake .game-info');
+        if (gameInfo) {
+            gameInfo.prepend(timerElement);
+        }
     }
     timerElement.textContent = 'Temps: 00:00';
+    
+    // Nettoyer le canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Créer l'écran de démarrage
     createSnakeStartScreen();
@@ -1354,26 +1683,31 @@ function createSnakeStartScreen() {
     startScreen.id = 'snake-start-screen';
     startScreen.style.cssText = `
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         background: rgba(0, 0, 0, 0.95);
         color: white;
-        padding: 30px;
-        border-radius: 15px;
-        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
         z-index: 100;
-        min-width: 300px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
     `;
     
     const rules = gameRules.snake;
     startScreen.innerHTML = `
-        <h2 style="color: #4ecdc4; margin-bottom: 20px;">🐍 Jeu du Serpent</h2>
-        <p style="margin-bottom: 15px;"><strong>Objectif :</strong> Atteindre ${rules.scoreGoal || 50} points</p>
-        <p style="margin-bottom: 15px;"><strong>Contrôles :</strong> Flèches directionnelles ou boutons</p>
-        <p style="margin-bottom: 20px;"><strong>Pénalité :</strong> ${rules.punition || "Faire 20 sauts"}</p>
-        <p style="margin-bottom: 25px; color: #ff9f43;"><strong>⏱️ Temps limite : 2 minutes</strong></p>
+        <h2 style="color: #4ecdc4; margin-bottom: 20px; text-align: center;">🐍 Jeu du Serpent</h2>
+        <div style="text-align: center; margin-bottom: 20px; padding: 0 20px;">
+            <p style="margin-bottom: 10px;"><strong>Objectif :</strong> Atteindre ${rules.scoreGoal || 50} points</p>
+            <p style="margin-bottom: 10px;"><strong>Contrôles :</strong> Flèches directionnelles ou boutons</p>
+            <p style="margin-bottom: 10px;"><strong>Pénalité :</strong> ${rules.punition || "Faire 20 sauts"}</p>
+            <p style="margin-bottom: 15px; color: #ff9f43;"><strong>⏱️ Temps limite : 2 minutes</strong></p>
+        </div>
         <button id="start-snake-game-btn" style="
             background: linear-gradient(135deg, #4ecdc4 0%, #2ecc71 100%);
             color: white;
@@ -1389,10 +1723,17 @@ function createSnakeStartScreen() {
         </button>
     `;
     
-    document.querySelector('.snake-container').appendChild(startScreen);
+    // S'assurer que le container Snake est accessible
+    const snakeContainer = document.querySelector('.snake-container');
+    if (snakeContainer) {
+        snakeContainer.appendChild(startScreen);
+    }
     
     // Ajouter l'événement au bouton de démarrage
-    document.getElementById('start-snake-game-btn').addEventListener('click', startSnakeGame);
+    const startBtn = document.getElementById('start-snake-game-btn');
+    if (startBtn) {
+        startBtn.addEventListener('click', startSnakeGame);
+    }
 }
 
 function startSnakeGame() {
@@ -1473,6 +1814,7 @@ function enableSnakeControls() {
         if (btn) {
             btn.style.pointerEvents = 'auto';
             btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
         }
     });
 }
@@ -1711,17 +2053,20 @@ function createSnakeGameOverScreen(message, isVictory, timeString) {
     gameOverScreen.id = 'snake-game-over';
     gameOverScreen.style.cssText = `
         position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         background: rgba(0, 0, 0, 0.95);
         color: white;
-        padding: 30px;
-        border-radius: 15px;
-        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
         z-index: 200;
-        min-width: 300px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        padding: 20px;
+        border-radius: 10px;
     `;
     
     const rules = gameRules.snake;
@@ -1773,13 +2118,21 @@ function createSnakeGameOverScreen(message, isVictory, timeString) {
         </button>
     `;
     
-    document.querySelector('.snake-container').appendChild(gameOverScreen);
+    const snakeContainer = document.querySelector('.snake-container');
+    if (snakeContainer) {
+        snakeContainer.appendChild(gameOverScreen);
+    }
     
     // Ajouter l'événement au bouton de redémarrage
-    document.getElementById('restart-snake-game-btn').addEventListener('click', () => {
-        gameOverScreen.remove();
-        initializeSnake();
-    });
+    const restartBtn = document.getElementById('restart-snake-game-btn');
+    if (restartBtn) {
+        restartBtn.addEventListener('click', () => {
+            if (gameOverScreen) {
+                gameOverScreen.remove();
+            }
+            initializeSnake();
+        });
+    }
 }
 
 // =============================

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GameForge - Créateur de Jeux ESPORT</title>
-    <link rel="stylesheet" href="style5.css">
+    <link rel="stylesheet" href="style6.css">
 </head>
 <body>
     <!-- Particules animées -->
@@ -25,7 +25,7 @@
                         <li><a href="#" class="nav-link active" data-page="accueil">Home</a></li>
                         <li><a href="#" class="nav-link" data-page="choix">Games</a></li>
                         <li><a href="#" class="nav-link" data-page="personnalisation">Create</a></li>
-                        <li><a href="#" class="nav-link" data-page="jeu">Play</a></li>
+                        <li><button class="btn-signin" id="btn-signin">Sign In</button></li>
                     </ul>
                 </nav>
             </div>
@@ -45,6 +45,9 @@
                 <h2 class="subtitle">CREATE YOUR ESPORT GAMES</h2>
             </div>
             
+            <div class="get-started-container">
+                <button class="btn" id="btn-creer">GET STARTED</button>
+            </div>
             <!-- Description et bouton comme dans la capture d'écran -->
             <div class="description-container">
                 <p class="description-text">
@@ -55,7 +58,6 @@
                     Créer un jeu
                 </button>
             </div>
-            
             <div class="stats">
                 <div class="stat-item">
                     <h3 id="games-count">128</h3>
@@ -71,7 +73,6 @@
                 </div>
             </div>
         </section>
-        
         <!-- Page de choix du type de jeu -->
         <section id="choix" class="page">
             <h1>Choisissez un type de jeu</h1>
@@ -359,10 +360,77 @@
         </section>
         
         <footer>
-            <p>© 2024 GameForge - Créez vos propres jeux ESPORT en ligne</p>
+            <p>© 2025 GameForge - Créez vos propres jeux ESPORT en ligne</p>
         </footer>
     </div>
 
-    <script src="script5.js"></script>
+    <!-- Modal de connexion -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <div class="modal-header">
+                <h2>🔐 Connexion</h2>
+                <p>Connectez-vous pour sauvegarder vos jeux et scores</p>
+            </div>
+            
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">📧 Email :</label>
+                        <input type="email" id="loginEmail" required placeholder="votre@email.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">🔑 Mot de passe :</label>
+                        <input type="password" id="loginPassword" required placeholder="Votre mot de passe">
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="rememberMe">
+                            <label for="rememberMe">Se souvenir de moi</label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-modal">Se connecter</button>
+                    
+                    <div class="form-footer">
+                        <p>Pas encore de compte ? <a href="#" id="showSignup">S'inscrire</a></p>
+                        <p><a href="#" class="forgot-password">Mot de passe oublié ?</a></p>
+                    </div>
+                </form>
+                
+                <form id="signupForm" style="display: none;">
+                    <div class="form-group">
+                        <label for="signupUsername">👤 Nom d'utilisateur :</label>
+                        <input type="text" id="signupUsername" required placeholder="Choisissez un pseudo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="signupEmail">📧 Email :</label>
+                        <input type="email" id="signupEmail" required placeholder="votre@email.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="signupPassword">🔑 Mot de passe :</label>
+                        <input type="password" id="signupPassword" required placeholder="Minimum 8 caractères">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">✅ Confirmer le mot de passe :</label>
+                        <input type="password" id="confirmPassword" required placeholder="Répétez votre mot de passe">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-modal">S'inscrire</button>
+                    
+                    <div class="form-footer">
+                        <p>Déjà un compte ? <a href="#" id="showLogin">Se connecter</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script6.js"></script>
 </body>
 </html>
