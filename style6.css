@@ -9,7 +9,7 @@
 
 /* Animation 3D d'ouverture */
 body {
-    background: linear-gradient(90deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    background: linear-gradient(90deg, #0f0c29 0%, #171431 50%, #24243e 100%);
     color: #fff;
     min-height: 100vh;
     display: flex;
@@ -18,7 +18,7 @@ body {
     padding: 20px;
     perspective: 1000px;
     overflow-x: hidden;
-    animation: pageEntrance 2s ease-out forwards;
+    animation: pageEntrance 1s ease-out forwards;
     opacity: 0;
     transform-origin: center center;
 }
