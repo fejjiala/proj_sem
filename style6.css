@@ -1533,48 +1533,6 @@ textarea {
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* Quiz */
-.quiz-question {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    animation: questionAppear 0.8s ease-out;
-}
-
-@keyframes questionAppear {
-    0% {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.quiz-options {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin: 30px 0;
-    transform-style: preserve-3d;
-}
-
-.quiz-option {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    padding: 15px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    transform-style: preserve-3d;
-}
-
-.quiz-option:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateZ(15px);
-}
 
 /* Dé */
 .dice-container {

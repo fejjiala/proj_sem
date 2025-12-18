@@ -15,7 +15,6 @@ let diceScore = 0;
 let gameRules = {
     xo: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", gridSize: 3, winLength: 3 },
     pfc: { regles: "", victoire: "", defaite: "", manches: 3, punition: "" },
-    quiz: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
     dice: { regles: "", victoire: "", defaite: "", manches: 5, punition: "" },
     mots: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", mots: "", gridSize: 10, timer: 60 },
     snake: { regles: "", victoire: "", defaite: "", manches: 1, punition: "", vitesse: 120, scoreGoal: 50 },
@@ -83,34 +82,6 @@ let motsMelees = {
     gameTimer: null,
     timeLeft: 60
 };
-
-let quizQuestions = [
-    {
-        question: "Quelle est la capitale de la France?",
-        options: ["Londres", "Berlin", "Paris", "Madrid"],
-        answer: 2
-    },
-    {
-        question: "Combien de côtés a un hexagone?",
-        options: ["4", "5", "6", "7"],
-        answer: 2
-    },
-    {
-        question: "Quel est le plus grand mammifère du monde?",
-        options: ["Éléphant", "Girafe", "Baleine bleue", "Rhinocéros"],
-        answer: 2
-    },
-    {
-        question: "Qui a peint la Joconde?",
-        options: ["Van Gogh", "Picasso", "Léonard de Vinci", "Michel-Ange"],
-        answer: 2
-    },
-    {
-        question: "Quel est le symbole chimique de l'or?",
-        options: ["Ag", "Fe", "Au", "Cu"],
-        answer: 2
-    }
-];
 
 // =============================
 // FONCTIONS GÉNÉRALES
@@ -1251,121 +1222,6 @@ function handlePFCClick() {
     }
 }
 
-// =============================
-// JEU QUIZ
-// =============================
-function initializeQuiz() {
-    const rules = gameRules.quiz;
-    
-    quizScore = 0;
-    const scoreQuiz = document.getElementById('score-quiz');
-    const questionsTotal = document.getElementById('questions-total');
-    const resultatQuiz = document.getElementById('resultat-quiz');
-    
-    if (scoreQuiz) scoreQuiz.textContent = quizScore;
-    if (questionsTotal) questionsTotal.textContent = rules.manches;
-    if (resultatQuiz) resultatQuiz.textContent = `🎯 ${rules.victoire}`;
-    
-    if (quizQuestions.length < rules.manches) {
-        generateCustomQuizQuestions(rules.manches);
-    }
-    
-    document.querySelectorAll('.quiz-option').forEach(opt => {
-        opt.style.pointerEvents = 'auto';
-        opt.addEventListener('click', handleQuizClick);
-    });
-    
-    showQuestion();
-}
-
-function generateCustomQuizQuestions(count) {
-    quizQuestions = [];
-    const questionTemplates = [
-        "Quelle est la réponse à la question #NUM ?",
-        "Lequel de ces éléments est correct pour la question #NUM ?",
-        "Pour la question #NUM, quelle est la bonne réponse ?",
-        "Sélectionnez la bonne réponse pour la question #NUM"
-    ];
-    
-    for (let i = 0; i < count; i++) {
-        quizQuestions.push({
-            question: questionTemplates[Math.floor(Math.random() * questionTemplates.length)].replace('#NUM', i + 1),
-            options: ["Option A", "Option B", "Option C", "Option D"],
-            answer: Math.floor(Math.random() * 4)
-        });
-    }
-}
-
-function showQuestion() {
-    const currentIndex = quizScore;
-    
-    if (currentIndex >= quizQuestions.length) {
-        endQuizGame();
-        return;
-    }
-    
-    const question = quizQuestions[currentIndex];
-    const questionElement = document.getElementById('question-quiz');
-    if (questionElement) {
-        questionElement.textContent = question.question;
-    }
-    
-    const options = document.querySelectorAll('.quiz-option .option-text');
-    options.forEach((opt, index) => {
-        if (index < question.options.length) {
-            opt.textContent = question.options[index];
-        }
-    });
-}
-
-function handleQuizClick() {
-    if (currentGameType !== 'quiz') return;
-    
-    const selectedOption = parseInt(this.getAttribute('data-option'));
-    const correctOption = quizQuestions[quizScore].answer;
-    const resultatQuiz = document.getElementById('resultat-quiz');
-    const scoreQuiz = document.getElementById('score-quiz');
-    
-    if (selectedOption === correctOption) {
-        quizScore++;
-        if (resultatQuiz) {
-            resultatQuiz.textContent = "✅ Bonne réponse!";
-            resultatQuiz.style.color = '#4CAF50';
-        }
-    } else {
-        if (resultatQuiz) {
-            resultatQuiz.textContent = `❌ Mauvaise réponse! La bonne réponse était : ${quizQuestions[quizScore].options[correctOption]}`;
-            resultatQuiz.style.color = '#FF6B6B';
-        }
-    }
-    
-    if (scoreQuiz) scoreQuiz.textContent = quizScore;
-    
-    setTimeout(showQuestion, 1500);
-}
-
-function endQuizGame() {
-    const rules = gameRules.quiz;
-    const resultatQuiz = document.getElementById('resultat-quiz');
-    if (!resultatQuiz) return;
-    
-    let finalMessage = `Quiz terminé! Votre score: ${quizScore}/${quizQuestions.length}`;
-    let punishmentText = '';
-    
-    if (quizScore >= Math.ceil(quizQuestions.length / 2)) {
-        finalMessage += ` 🎉 ${rules.victoire}`;
-        punishmentText = `<p class="punition">💥 Vous avez évité la punition!</p>`;
-    } else {
-        finalMessage += ` 💥 ${rules.defaite}`;
-        punishmentText = `<p class="punition">💥 Vous devez: ${rules.punition}</p>`;
-    }
-    
-    resultatQuiz.innerHTML = `<h3>${finalMessage}</h3>${punishmentText}`;
-    
-    document.querySelectorAll('.quiz-option').forEach(opt => {
-        opt.style.pointerEvents = 'none';
-    });
-}
 
 // =============================
 // JEU DE DÉ
